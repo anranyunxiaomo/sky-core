@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>API 仪表盘</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/inter-ui/3.19.3/inter.css">
+    <style>
+        :root {
+            /* macOS '26' Palette */
+            --bg-body: #000000;
+
+            /* Glassmorphism Variables */
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --glass-blur: blur(24px);
+
+            /* Dark Mode Support (Future proofing) */
+            --text-primary: #1d1d1f;
+            /* Apple Dark Grey */
+            --text-secondary: #86868b;
+            /* Apple Light Grey */
+
+            --accent-blue: #0071e3;
+            /* Classic Apple Blue */
+            --accent-red: #ff3b30;
+            --accent-green: #34c759;
+            --accent-orange: #ff9500;
+
+            --border-light: rgba(0, 0, 0, 0.05);
+
+            /* Typography */
+            --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+        }
+
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .container {
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 70px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 56px;
+            font-weight: 700;
+            margin: 0 0 16px 0;
+            letter-spacing: -0.02em;
+            color: #fff;
+            /* Title pops on dark/vibrant BG */
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        p.subtitle {
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+            margin: 0;
+            letter-spacing: 0.01em;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Glass Bar (Search/Dock Style) */
+        .glass-bar {
+            margin-top: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(30px) saturate(180%);
+            -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .glass-bar:hover {
+            transform: scale(1.02);
+        }
+
+        .glass-input {
+            border: none;
+            background: transparent;
+            padding: 8px 12px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            width: 300px;
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .glass-input::placeholder {
+            color: #999;
+        }
+
+        .glass-btn {
+            background: #fff;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 16px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-btn:hover {
+            background: var(--accent-blue);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+        }
+
+        /* Controller Sections */
+        .controller-section {
+            margin-bottom: 60px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .controller-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            padding-left: 2px;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            letter-spacing: -0.01em;
+            border-left: none;
+            /* Removed line for cleaner look */
+        }
+
+        /* Card List (Frosted Glass Container) */
+        .api-list {
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(40px) saturate(150%);
+            -webkit-backdrop-filter: blur(40px) saturate(150%);
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            /* Softer shadow */
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .api-item {
+            display: flex;
+            align-items: center;
+            padding: 24px 32px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+            transition: background 0.2s;
+        }
+
+        .api-item:last-child {
+            border-bottom: none;
+        }
+
+        .api-item:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Method Badges (Pill Shape) */
+        .method-badge {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 20px;
+            /* Full Pill */
+            width: 60px;
+            text-align: center;
+            margin-right: 24px;
+            flex-shrink: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .GET {
+            background: rgba(0, 113, 227, 0.1);
+            color: var(--accent-blue);
+        }
+
+        .POST {
+            background: rgba(52, 199, 89, 0.1);
+            color: var(--accent-green);
+        }
+
+        .PUT {
+            background: rgba(255, 149, 0, 0.1);
+            color: var(--accent-orange);
+        }
+
+        .DELETE {
+            background: rgba(255, 59, 48, 0.1);
+            color: var(--accent-red);
+        }
+
+        .ALL {
+            background: rgba(142, 142, 147, 0.1);
+            color: var(--text-secondary);
+        }
+
+        /* API Info */
+        .api-info {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .api-path {
+            font-family: var(--font-mono);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 500px;
+        }
+
+        .api-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        /* Action Buttons (iOS Style) */
+        .btn-test {
+            background: rgba(0, 0, 0, 0.03);
+            color: var(--text-primary);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 18px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .btn-test:hover {
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: scale(1.02);
+        }
+
+        /* Modal (Floaty) */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.2);
+            /* Lighter overlay for glass feel */
+            backdrop-filter: blur(15px);
+            z-index: 100;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            width: 720px;
+            max-width: 90%;
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(50px) saturate(180%);
+            -webkit-backdrop-filter: blur(50px) saturate(180%);
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.2);
+            z-index: 101;
+            display: none;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+            /* Apple Ease */
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .modal.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .overlay.active {
+            opacity: 1;
+        }
+
+        .modal h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        /* Inputs */
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            background: rgba(255, 255, 255, 0.5);
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s;
+            box-sizing: border-box;
+            color: var(--text-primary);
+        }
+
+        .form-input:focus {
+            background: #fff;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
+        }
+
+        /* Segmented Control (iOS Style) */
+        .segmented-control {
+            display: flex;
+            background: rgba(118, 118, 128, 0.12);
+            padding: 3px;
+            border-radius: 12px;
+            /* iOS Segment default */
+        }
+
+        .segment {
+            flex: 1;
+            text-align: center;
+            padding: 6px 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            border-radius: 9px;
+            transition: all 0.2s ease;
+        }
+
+        .segment:hover {
+            opacity: 0.7;
+        }
+
+        .segment.selected,
+        .segment.active {
+            background: #FFFFFF;
+            font-weight: 600;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04);
+        }
+
+        /* JSON Editor */
+        textarea {
+            width: 100%;
+            border-radius: 18px;
+            background: #1e1e1e;
+            /* Dark IDE Theme */
+            color: #d4d4d4;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            padding: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            resize: vertical;
+            box-sizing: border-box;
+            line-height: 1.5;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+            padding: 12px 32px;
+            border-radius: 20px;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 113, 227, 0.3);
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(0, 113, 227, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .btn-cancel {
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 12px 24px;
+            border: none;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .btn-cancel:hover {
+            color: var(--text-primary);
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #999;
+            transition: all 0.2s;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-icon:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary);
+        }
+
+        .btn-add {
+            background: var(--text-primary);
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-add:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Response Area */
+        .response-box {
+            margin-top: 24px;
+            padding: 24px;
+            background: #fff;
+            border-radius: 20px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            white-space: pre-wrap;
+            display: none;
+            max-height: 450px;
+            overflow-y: auto;
+            color: #333;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.02);
+        }
+
+        /* --- Advanced Console Modal Styles --- */
+        .console-layout {
+            display: flex;
+            gap: 24px;
+            height: 650px;
+        }
+
+        .c-col-left,
+        .c-col-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .c-col-right {
+            background: rgba(245, 245, 247, 0.8);
+            /* Off-white */
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .console-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            margin-bottom: 16px;
+        }
+
+        .c-tab {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .c-tab.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        /* Status Bar */
+        .c-status-bar,
+        #t-status-bar {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            margin-bottom: 12px;
+            align-items: center;
+        }
+
+        /* Badges */
+        .c-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .c-badge-success {
+            background: rgba(52, 199, 89, 0.15);
+            color: #166534;
+        }
+
+        .c-badge-error {
+            background: rgba(255, 59, 48, 0.15);
+            color: #991b1b;
+        }
+
+        .modal-large {
+            width: 960px !important;
+            max-width: 95vw;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Dark Mode Night Sky Overrides (High Contrast & Variables) --- */
+        :root {
+            --text-primary: #ffffff !important;
+            --text-secondary: #dddddd !important;
+            --bg-body: #0b0b15 !important;
+            --accent-blue: #2997ff !important;
+            /* Brighter Blue */
+            --glass-bg: rgba(20, 20, 30, 0.65) !important;
+            /* More transparent to see stars */
+        }
+
+        body {
+            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffffff' d='M12,0L14.5,9.5L24,12L14.5,14.5L12,24L9.5,14.5L0,12L9.5,9.5L12,0Z' style='filter:drop-shadow(0 0 4px rgba(255,255,255,0.8));'/%3E%3C/svg%3E") 12 12, auto;
+            color: var(--text-primary);
+            background-color: var(--bg-body);
+            background-image: radial-gradient(circle at 50% 0%, rgba(30, 60, 100, 0.3), transparent 60%), url('/images/macos-bg.png');
+            background-attachment: fixed;
+            background-size: cover;
+            overflow-x: hidden;
+            /* Prevent horizontal scroll from absolute stars */
+        }
+
+        /* Ambient Space Glow (Intensified) */
+        .planet-glow {
+            position: absolute;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1000px;
+            height: 800px;
+            background: radial-gradient(circle at 50% 50%, rgba(41, 151, 255, 0.4), transparent 70%);
+            filter: blur(80px);
+            z-index: -1;
+            pointer-events: none;
+            animation: pulseGlow 8s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% {
+                opacity: 0.6;
+                transform: translateX(-50%) scale(1);
+            }
+
+            100% {
+                opacity: 0.95;
+                transform: translateX(-50%) scale(1.1);
+            }
+        }
+
+        /* Static Stars */
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            z-index: -1;
+            animation: twinkle var(--duration, 3s) infinite ease-in-out;
+            opacity: var(--opacity, 0.8);
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+            /* Glow for larger stars */
+        }
+
+        .constellation-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -2;
+            /* Behind stars */
+        }
+
+        .constellation-line {
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 1px;
+            stroke-linecap: round;
+        }
+
+        @keyframes twinkle {
+
+            0%,
+            100% {
+                opacity: var(--opacity, 0.8);
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.2;
+                transform: scale(0.5);
+            }
+        }
+
+        /* Force specific elements to use the new variables if they were hardcoded */
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        p,
+        span,
+        div,
+        a,
+        button,
+        input,
+        textarea,
+        select,
+        label {
+            color: inherit;
+            /* Allow cascading from body/parent */
+        }
+
+        /* Start of component specific overrides */
+        h1 {
+            color: #ffffff !important;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.6), 0 0 10px rgba(0, 191, 255, 0.8);
+        }
+
+        .controller-title {
+            color: #ffffff !important;
+            border-left: 4px solid #00BFFF !important;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+        }
+
+        /* Meteor */
+        .meteor-particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: linear-gradient(135deg, #ffffff, #87CEFA);
+            border-radius: 50%;
+            pointer-events: none;
+            mix-blend-mode: screen;
+            z-index: 9999;
+            animation: meteorFade 0.8s ease-out forwards;
+            box-shadow: 0 0 6px rgba(135, 206, 250, 0.8);
+        }
+
+        @keyframes meteorFade {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: scale(0.1) translate(-20px, 20px);
+            }
+        }
+
+        /* Modal & Glass - More Transparent to show stars */
+        .glass-bar,
+        .api-list,
+        .modal,
+        .c-col-right {
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(20px) !important;
+            /* Strong blur */
+            -webkit-backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+            color: #ffffff !important;
+        }
+
+        .api-item:hover,
+        .glass-btn:hover {
+            background: rgba(255, 255, 255, 0.15) !important;
+        }
+
+        /* Inputs & Textareas */
+        .form-input,
+        .glass-input,
+        textarea {
+            background: rgba(0, 0, 0, 0.5) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .form-input::placeholder,
+        .glass-input::placeholder {
+            color: #aaaaaa !important;
+        }
+
+        /* Test Button Fix */
+        .btn-test {
+            color: #ffffff !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .btn-test:hover {
+            background: #fff !important;
+            color: #000 !important;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Text Visibility Helpers */
+        .form-label,
+        .c-tab,
+        .api-path,
+        .api-desc {
+            color: #ffffff !important;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        .api-desc {
+            color: #dddddd !important;
+        }
+
+        /* Segment Control Text */
+        .segment {
+            color: #dddddd !important;
+        }
+
+        .segment.active {
+            color: #000000 !important;
+            /* Active segment needs dark text if background is white */
+            background: #ffffff !important;
+        }
+
+        /* Add Button - Force visibility */
+        .btn-add {
+            background: #ffffff !important;
+            color: #000000 !important;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important;
+            border: none !important;
+        }
+
+        .btn-add:hover {
+            background-color: #f0f0f0 !important;
+            transform: translateY(-1px);
+        }
+
+        /* Glass Button (Header) - Force Black Text on White BG */
+        .glass-btn {
+            background: #ffffff !important;
+            color: #000000 !important;
+            border: none !important;
+        }
+
+        .glass-btn:hover {
+            background: #e0e0e0 !important;
+            transform: scale(1.05);
+        }
+
+        /* Code Box */
+        .response-box,
+        #c-res-body {
+            background: rgba(0, 0, 0, 0.8) !important;
+            color: #00ffca !important;
+            border: 1px solid #444 !important;
+            font-family: 'SF Mono', monospace !important;
+            padding: 15px;
+            border-radius: 8px;
+            position: relative;
+            /* For copy button context if needed */
+        }
+
+        /* Custom Scrollbar (Webkit) */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Copy Button */
+        .btn-copy {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ccc;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .btn-copy:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+    </style>
+    <!-- Meteor Script -->
+    <script>
+        document.addEventListener('mousemove', function (e) {
+            if (Math.random() > 0.3) return;
+            const p = document.createElement('div');
+            p.className = 'meteor-particle';
+            p.style.left = e.pageX + 'px';
+            p.style.top = e.pageY + 'px';
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 800);
+        });
+    </script>
+    <script>
+        /**
+         * Smart Relay 仪表盘核心逻辑
+         * 包含：
+         * 1. ApiClient: 统一的 HTTP 请求客户端
+         * 2. HistoryManager: 控制台请求历史记录管理
+         * 3. UI 交互逻辑 (弹窗、折叠、参数处理)
+         */
+        class ApiClient {
+            static resolveUrl(base, path) {
+                if (!path) return base || '';
+                if (path.startsWith('http')) return path;
+
+                let b = base ? base.trim() : '';
+                if (b.endsWith('/')) b = b.slice(0, -1);
+
+                let p = path.trim();
+                if (!p.startsWith('/')) p = '/' + p;
+
+                return b + p;
+            }
+
+            static parseHeaders(headerStr) {
+                const headers = {};
+                if (!headerStr) return headers;
+                headerStr.split('\n').forEach(line => {
+                    const parts = line.split(':');
+                    if (parts.length >= 2) {
+                        headers[parts[0].trim()] = parts.slice(1).join(':').trim();
+                    }
+                });
+                return headers;
+            }
+
+            /**
+             * Prepares and executes the fetch request
+             * @param {string} method GET, POST, etc.
+             * @param {string} url Full URL
+             * @param {object} headers Headers object
+             * @param {string} bodyStr Raw body string (JSON or Key:Val)
+             * @param {string} bodyMode 'json' or 'form'
+             */
+            static async send(method, url, headers, bodyStr, bodyMode) {
+                const opts = { method, headers: { ...headers } };
+                let targetUrl = url;
+
+                // Content-Type Detection
+                const hasCT = Object.keys(opts.headers).some(k => k.toLowerCase() === 'content-type');
+
+                if (method === 'GET' || method === 'HEAD') {
+                    // For GET: Parse Form Body as Query Params
+                    if (bodyMode === 'form' && bodyStr) {
+                        const params = new URLSearchParams();
+                        bodyStr.split('\n').forEach(line => {
+                            const [k, ...v] = line.split(':');
+                            if (k && k.trim()) params.append(k.trim(), v.join(':').trim());
+                        });
+                        const qs = params.toString();
+                        if (qs) targetUrl += (targetUrl.includes('?') ? '&' : '?') + qs;
+                    }
+                    delete opts.body;
+                } else {
+                    // For POST/PUT/etc
+                    if (bodyMode === 'json') {
+                        if (!hasCT) opts.headers['Content-Type'] = 'application/json';
+                        try {
+                            JSON.parse(bodyStr);
+                            opts.body = bodyStr;
+                        } catch (e) {
+                            opts.body = bodyStr;
+                        }
+                    } else {
+                        // Form Mode -> x-www-form-urlencoded
+                        if (!hasCT) opts.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+                        const params = new URLSearchParams();
+                        if (bodyStr) {
+                            bodyStr.split('\n').forEach(line => {
+                                const [k, ...v] = line.split(':');
+                                if (k && k.trim()) params.append(k.trim(), v.join(':').trim());
+                            });
+                        }
+                        opts.body = params;
+                    }
+                }
+
+                const startTime = Date.now();
+                try {
+                    const res = await fetch(targetUrl, opts);
+                    const duration = Date.now() - startTime;
+
+                    let text = '';
+                    let isJson = false;
+                    const ct = res.headers.get('content-type');
+
+                    if (ct && ct.includes('json')) {
+                        const j = await res.json();
+                        text = JSON.stringify(j, null, 2);
+                        isJson = true;
+                    } else {
+                        text = await res.text();
+                    }
+
+                    return {
+                        ok: res.ok,
+                        status: res.status,
+                        statusText: res.statusText,
+                        duration: duration,
+                        size: new Blob([text]).size,
+                        text: text,
+                        isJson: isJson
+                    };
+                } catch (e) {
+                    return {
+                        ok: false,
+                        status: 0,
+                        statusText: 'Network Error',
+                        duration: Date.now() - startTime,
+                        size: 0,
+                        text: 'Error: ' + e.message,
+                        isJson: false
+                    };
+                }
+            }
+        }
+
+        /**
+         * History Manager for Console Persistence
+         */
+        class HistoryManager {
+            static saveState() {
+                try {
+                    const state = {
+                        method: document.getElementById('c-method').value,
+                        path: document.getElementById('c-url').value,
+                        base: document.getElementById('c-base').value,
+                        body: document.getElementById('c-body').value,
+                        headers: document.getElementById('c-headers').value,
+                        bodyMode: window.cBodyMode
+                    };
+                    localStorage.setItem('api_console_last_state', JSON.stringify(state));
+                } catch (e) { console.error(e); }
+            }
+
+            static restoreState() {
+                try {
+                    const raw = localStorage.getItem('api_console_last_state');
+                    if (!raw) return;
+                    const state = JSON.parse(raw);
+
+                    if (state.method) document.getElementById('c-method').value = state.method;
+                    if (state.path) document.getElementById('c-url').value = state.path;
+                    if (state.base) document.getElementById('c-base').value = state.base;
+                    if (state.body) document.getElementById('c-body').value = state.body;
+                    if (state.headers) document.getElementById('c-headers').value = state.headers;
+
+                    if (state.bodyMode && window.setConsoleBodyType) {
+                        window.setConsoleBodyType(state.bodyMode);
+                    }
+                    if (window.updateConsoleUI) window.updateConsoleUI();
+                } catch (e) { console.error('History Restore Failed', e); }
+            }
+        }
+
+        // --- Global Helpers ---
+        window.debounce = (func, wait) => {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        };
+
+        window.copyContent = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const text = el.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector(`button[onclick*="'${id}'"]`);
+                if (btn) {
+                    const original = btn.innerText;
+                    btn.innerText = 'Copied!';
+                    setTimeout(() => btn.innerText = original, 2000);
+                }
+            });
+        };
+
+        // --- Global Events ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Restore Console History
+            HistoryManager.restoreState();
+            // Stars & Constellations Generator
+            const createStars = () => {
+                const count = 80;
+                const starData = [];
+                const container = document.body;
+
+                // SVG Layer for Constellations
+                const svgNS = "http://www.w3.org/2000/svg";
+                const svg = document.createElementNS(svgNS, "svg");
+                svg.classList.add("constellation-svg");
+                // Insert SVG before stars? Or after? Z-index handles it, but DOM order matters for 'appendChild' loop.
+                // We append SVG first so it is behind if z-index fails, but z-index -2 handles it.
+                container.appendChild(svg);
+
+                for (let i = 0; i < count; i++) {
+                    const star = document.createElement('div');
+                    star.className = 'star';
+                    const x = Math.random() * 100; // %
+                    const y = Math.random() * 65;  // % (Top 65%)
+
+                    // Larger Stars: 2px to 4.5px
+                    const size = Math.random() * 2.5 + 2;
+                    const duration = Math.random() * 3 + 2;
+                    const opacity = Math.random() * 0.7 + 0.3; // Brighter
+
+                    star.style.left = x + '%';
+                    star.style.top = y + '%';
+                    star.style.width = size + 'px';
+                    star.style.height = size + 'px';
+                    star.style.setProperty('--duration', duration + 's');
+                    star.style.setProperty('--opacity', opacity);
+                    container.appendChild(star);
+
+                    starData.push({ x, y });
+                }
+
+                // Connect Constellations
+                // We connect nearby stars to form random shapes
+                for (let i = 0; i < count; i++) {
+                    // Connect to 2 nearest neighbors max to avoid mesh clutter
+                    const neighbors = [];
+                    for (let j = 0; j < count; j++) {
+                        if (i === j) continue;
+                        const dx = starData[i].x - starData[j].x;
+                        const dy = starData[i].y - starData[j].y;
+                        const dist = dx * dx + dy * dy;
+                        if (dist < 150) { // Threshold for connection
+                            neighbors.push({ idx: j, dist: dist });
+                        }
+                    }
+                    // Sort by distance
+                    neighbors.sort((a, b) => a.dist - b.dist);
+
+                    // Connect to closest 1-2 stars
+                    const connections = Math.floor(Math.random() * 2) + 1;
+                    for (let k = 0; k < Math.min(neighbors.length, connections); k++) {
+                        const target = starData[neighbors[k].idx];
+                        // Avoid duplicates (draw only if i < target.idx)
+                        if (i < neighbors[k].idx) {
+                            const line = document.createElementNS(svgNS, "line");
+                            line.setAttribute("x1", starData[i].x + "%");
+                            line.setAttribute("y1", starData[i].y + "%");
+                            line.setAttribute("x2", target.x + "%");
+                            line.setAttribute("y2", target.y + "%");
+                            line.classList.add("constellation-line");
+                            line.style.opacity = Math.random() * 0.2 + 0.05; // Subtle lines
+                            svg.appendChild(line);
+                        }
+                    }
+                }
+            };
+            createStars();
+
+            // Helper: Smart Join
+            const smartJoin = (base, path) => {
+                if (!base) return path;
+                if (!path) return base;
+                // Normalize slashes
+                base = base.replace(/\/+$/, '');
+                path = path.startsWith('/') ? path : '/' + path;
+
+                // Deduplicate overlap? e.g. base=.../api, path=/api/users
+                // Heuristic: check if path starts with the last segment of base?
+                // Simple Approach: If path starts with the Context Path used in Base?
+                // Actually, the most reliable way for visual sync is:
+                // If the base ends with the start of path (more than 1 char), merge.
+
+                // Check common overlap
+                // Iterate from overlap length = path.length down to 2
+                // This is expensive but safe for UI string.
+                const maxOverlap = Math.min(base.length, path.length);
+                for (let i = maxOverlap; i > 1; i--) {
+                    if (base.endsWith(path.substring(0, i))) {
+                        return base + path.substring(i);
+                    }
+                }
+                return base + path;
+            };
+
+            // Base URL Sync
+            const hostInput = document.getElementById('target-host');
+            window.smartJoin = smartJoin; // Export for updateUrlPreview
+
+            if (hostInput) {
+                // Debounced Handler
+                const handler = window.debounce(() => {
+                    const host = hostInput.value.trim();
+                    document.querySelectorAll('.api-item').forEach(item => {
+                        const pathEl = item.querySelector('.api-path');
+                        // Retrieve original relative path from hidden data
+                        // FIX: Use .data-path (relative) instead of .data-url (absolute)
+                        const rawPath = item.querySelector('.data-path').innerText || item.querySelector('.data-url').innerText;
+
+                        pathEl.innerText = smartJoin(host, rawPath);
+                    });
+
+                    // Also update modal if open
+                    if (document.getElementById('modal').style.display === 'block') {
+                        updateUrlPreview();
+                    }
+                }, 300);
+
+                hostInput.addEventListener('input', handler);
+            }
+        });
+
+        // --- Core ---
+        console.log('API Dashboard Script Loaded');
+        window.currentPathStr = '';
+        window.activeItemPathEl = null; // Track active list item
+
+        window.openTest = function (btn) {
+            try {
+                const item = btn.closest('.api-item');
+                window.activeItemPathEl = item.querySelector('.api-path'); // Capture ref
+
+                // Prefer raw path if available
+                const pathEl = item.querySelector('.data-path');
+                const url = pathEl ? pathEl.innerText : item.querySelector('.data-url').innerText;
+                let method = item.querySelector('.data-method').innerText.trim();
+                const paramsCsv = item.querySelector('.data-params').innerText;
+                const paramType = item.querySelector('.data-type').innerText;
+                const template = item.querySelector('.data-template').value;
+
+                if (method === 'ALL' || !method) method = 'GET';
+
+                // Store Key for replacement logic
+                let relPath = url;
+                if (!relPath.startsWith('/')) relPath = '/' + relPath;
+                window.currentPathStr = relPath;
+
+                // Set basic info
+                const userHost = document.getElementById('target-host').value;
+                let base = userHost ? userHost.trim() : '';
+                if (base.endsWith('/')) base = base.slice(0, -1);
+
+                document.getElementById('inpUrl').value = base + relPath;
+                setMethod(method);
+
+                // Clear previous
+                document.getElementById('kvContainer').innerHTML = '';
+                document.getElementById('inpJson').value = '';
+                document.getElementById('responseBox').style.display = 'none';
+                document.getElementById('responseBox').innerText = '';
+
+                // Handle Params
+                const params = paramsCsv ? paramsCsv.split(',') : [];
+
+                // 1. Fill KV
+                const simpleParams = params.filter(function (p) { return !p.startsWith('BODY:'); });
+                simpleParams.forEach(function (p) { addKv(p); });
+                if (simpleParams.length === 0) addKv(); // Default empty row
+
+                // 2. Fill JSON
+                if (template && template.length > 2) {
+                    document.getElementById('inpJson').value = template;
+                } else {
+                    const bodyParam = params.find(function (p) { return p.startsWith('BODY:'); });
+                    if (bodyParam) {
+                        const type = bodyParam.split(':')[1];
+                        document.getElementById('inpJson').value = type === 'String' ? '"String Value"' : '{\n  "msg": "请填写 ' + type + '"\n}';
+                    }
+                }
+
+                // 3. Switch Mode
+                if (paramType === 'JSON') {
+                    showJsonMode(true);
+                } else {
+                    const m = method;
+                    showJsonMode(m === 'POST' || m === 'PUT' || m === 'PATCH');
+                }
+
+                setTimeout(updateUrlPreview, 10);
+                showModal(); // FIX: Actually open the modal!
+            } catch (e) {
+                alert('打开测试面板失败: ' + e.message);
+                console.error(e);
+            }
+        };
+
+        // --- Logic ---
+        function setMethod(m) {
+            document.getElementById('inpMethod').value = m;
+            document.querySelectorAll('.segment').forEach(function (el) {
+                el.classList.toggle('selected', el.innerText === (m === 'DELETE' ? 'DEL' : m));
+            });
+
+            const isBody = (m === 'POST' || m === 'PUT' || m === 'PATCH');
+            const btns = document.getElementById('bodyTypeControl');
+            if (btns) btns.style.display = isBody ? 'flex' : 'none';
+
+            if (!isBody) {
+                // GET/DELETE: Always Query Params (KV)
+                document.getElementById('kvParamsArea').style.display = 'block';
+                document.getElementById('jsonParamsArea').style.display = 'none';
+                document.getElementById('paramLabel').innerText = 'URL 参数 (Query Params)';
+            } else {
+                // POST: Default to JSON, but respect user toggle if we implemented memory.
+                // For now, reset to JSON or keep current?
+                // Let's default to JSON for safety.
+                setBodyMode('json');
+            }
+        }
+
+        function setBodyMode(mode) {
+            const isJson = (mode === 'json');
+            // Update toggles
+            document.querySelectorAll('.body-toggle').forEach(el => {
+                el.classList.toggle('active', el.getAttribute('data-mode') === mode);
+            });
+
+            document.getElementById('kvParamsArea').style.display = isJson ? 'none' : 'block';
+            document.getElementById('jsonParamsArea').style.display = isJson ? 'block' : 'none';
+
+            if (!isJson) {
+                document.getElementById('paramLabel').innerText = '表单参数 (Form Body)';
+            }
+        }
+
+
+        // --- Advanced Console Modal Logic ---
+        function openConsole(btn) {
+            const path = btn.getAttribute('data-path');
+            const method = btn.getAttribute('data-method');
+            const params = btn.getAttribute('data-params');
+            const body = btn.getAttribute('data-body');
+
+            // Populate Fields
+            document.getElementById('c-method').value = method || 'GET';
+            document.getElementById('c-url').value = path || '';
+
+            // Base URL Sync
+            const mainHost = document.getElementById('target-host').value;
+            document.getElementById('c-base').value = mainHost;
+
+            // Body/Params
+            if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
+                if (body) {
+                    document.getElementById('c-body').value = body;
+                } else if (params) {
+                    // Convert params CSV to JSON body
+                    const obj = {};
+                    params.split(',').forEach(p => {
+                        const [k, v] = p.split(':');
+                        if (k && !k.startsWith('BODY:')) obj[k.trim()] = v ? v.trim() : '';
+                    });
+                    document.getElementById('c-body').value = JSON.stringify(obj, null, 2);
+                }
+            } else {
+                // GET/DELETE -> Append Params to URL
+                if (params) {
+                    const qs = params.split(',').map(p => {
+                        const [k, v] = p.split(':');
+                        if (k && !k.startsWith('BODY:')) return k.trim() + '=' + encodeURIComponent(v ? v.trim() : '');
+                        return '';
+                    }).filter(s => s).join('&');
+
+                    if (qs) {
+                        const sep = path.includes('?') ? '&' : '?';
+                        document.getElementById('c-url').value = path + sep + qs;
+                    }
+                }
+            }
+
+            // Show Modal
+            const overlay = document.getElementById('consoleModal');
+            const inner = overlay.querySelector('.modal');
+            overlay.style.display = 'block';
+            inner.style.display = 'block';
+
+            // Reflow
+            void inner.offsetWidth;
+
+            overlay.classList.add('active'); // Opacity 1
+            inner.classList.add('active');   // Opacity 1 + Scale
+
+            // FIX: Initialize UI State
+            setConsoleBodyType('json');
+            updateConsoleUI();
+        }
+
+        window.openGlobalConsole = function () {
+            // Open empty
+            const mainHost = document.getElementById('target-host').value;
+            document.getElementById('c-base').value = mainHost;
+            document.getElementById('c-method').value = 'GET';
+            document.getElementById('c-url').value = '';
+            document.getElementById('c-body').value = '';
+
+            const overlay = document.getElementById('consoleModal');
+            const inner = overlay.querySelector('.modal');
+            overlay.style.display = 'block';
+            inner.style.display = 'block';
+
+            void inner.offsetWidth;
+
+            overlay.classList.add('active');
+            inner.classList.add('active');
+
+            // FIX: Initialize UI State
+            setConsoleBodyType('json');
+            updateConsoleUI();
+        };
+
+        function closeConsoleModal() {
+            const overlay = document.getElementById('consoleModal');
+            const inner = overlay.querySelector('.modal');
+
+            overlay.classList.remove('active');
+            inner.classList.remove('active');
+
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                inner.style.display = 'none';
+            }, 300);
+        }
+
+        function switchConsoleTab(el, targetId) {
+            document.querySelectorAll('.c-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.c-tab-content').forEach(c => c.style.display = 'none');
+            document.getElementById(targetId).style.display = 'block';
+        }
+
+        // --- Console UI Helpers ---
+        window.cBodyMode = 'json'; // default
+
+        function updateConsoleUI() {
+            const m = document.getElementById('c-method').value;
+            // Enable Body/Params tab for GET/DELETE as well (treated as Query Params when in Form mode)
+            const isBody = (m === 'POST' || m === 'PUT' || m === 'PATCH' || m === 'GET' || m === 'DELETE');
+
+            const controls = document.getElementById('c-body-controls');
+            const container = document.getElementById('c-body-container');
+            const msg = document.getElementById('c-body-msg');
+
+            if (controls) controls.style.display = isBody ? 'flex' : 'none';
+            if (container) container.style.display = isBody ? 'block' : 'none';
+            if (msg) msg.style.display = isBody ? 'none' : 'block';
+
+            // Auto-Switch Body Mode based on Method
+            if (m === 'GET' || m === 'DELETE') {
+                setConsoleBodyType('form');
+            } else {
+                setConsoleBodyType('json');
+            }
+        }
+
+        function setConsoleBodyType(mode) {
+            console.log('Switching Console Body Mode:', mode);
+            window.cBodyMode = mode;
+            const btnJson = document.getElementById('c-bt-json');
+            const btnForm = document.getElementById('c-bt-form');
+            if (btnJson) btnJson.classList.toggle('active', mode === 'json');
+            if (btnForm) btnForm.classList.toggle('active', mode === 'form');
+
+            const area = document.getElementById('c-body');
+            if (area) {
+                if (mode === 'json') {
+                    area.placeholder = '{ "key": "value" }';
+                } else {
+                    area.placeholder = "key1: value1\nkey2: value2\n(Use newlines for multiple params)";
+                }
+            }
+        }
+        window.setConsoleBodyType = setConsoleBodyType;
+
+        async function execConsoleRequest() {
+            const method = document.getElementById('c-method').value;
+            const path = document.getElementById('c-url').value;
+            const baseUrl = document.getElementById('c-base').value;
+            const bodyStr = document.getElementById('c-body').value;
+            const headerStr = document.getElementById('c-headers').value;
+
+            // 1. Prepare
+            const url = ApiClient.resolveUrl(baseUrl, path);
+            const headers = ApiClient.parseHeaders(headerStr);
+
+            // UI Loading
+            const resBodyEl = document.getElementById('c-res-body');
+            const statusBar = document.getElementById('c-status-bar');
+            resBodyEl.innerText = 'Sending...';
+            resBodyEl.style.color = '#666';
+
+            // 2. Execute
+            const res = await ApiClient.send(method, url, headers, bodyStr, window.cBodyMode);
+
+            // 3. Render
+            document.getElementById('c-time').innerText = res.duration + ' ms';
+            document.getElementById('c-size').innerText = res.size + ' B';
+
+            const statusBadge = document.getElementById('c-status');
+            resBodyEl.innerText = res.text;
+            resBodyEl.style.color = res.ok ? '#00ffca' : '#d00';
+
+            // Auto Save History
+            HistoryManager.saveState();
+        }
+
+        function showJsonMode(isJson) {
+            document.getElementById('kvParamsArea').style.display = isJson ? 'none' : 'block';
+            document.getElementById('jsonParamsArea').style.display = isJson ? 'block' : 'none';
+        }
+
+        function addKv(key, val) {
+            if (!key) key = '';
+            if (!val && key) val = 'test_' + key;
+            if (!val) val = '';
+
+            const row = document.createElement('div');
+            row.className = 'kv-row';
+            row.innerHTML = `
+                <input class="form-input key" placeholder="Key" value="${key}" style="flex:1;" oninput="updateUrlPreview()">
+                <input class="form-input val" placeholder="Value" value="${val}" style="flex:1;" oninput="updateUrlPreview()">
+                <button class="btn-icon" onclick="this.parentElement.remove(); updateUrlPreview();">&times;</button>
+            `;
+            document.getElementById('kvContainer').appendChild(row);
+        }
+
+        window.addKv = addKv;
+
+        window.formatJson = function () {
+            const el = document.getElementById('inpJson');
+            try {
+                const o = JSON.parse(el.value);
+                el.value = JSON.stringify(o, null, 2);
+            } catch (e) { /* ignore */ }
+        };
+
+        function updateUrlPreview() {
+            try {
+                let url = window.currentPathStr || '';
+                if (!url) return;
+
+                const userHost = document.getElementById('target-host').value;
+                let base = userHost ? userHost.trim() : '';
+                if (base.endsWith('/')) base = base.slice(0, -1);
+
+                let relPath = url;
+                if (!relPath.startsWith('/')) relPath = '/' + relPath;
+
+                let finalPath = relPath;
+
+                document.querySelectorAll('#kvContainer .kv-row').forEach(function (row) {
+                    const k = row.querySelector('.key').value.trim();
+                    const v = row.querySelector('.val').value.trim();
+
+                    if (k) {
+                        const regex = new RegExp('\{' + k + '\}', 'g');
+                        if (regex.test(finalPath)) {
+                            finalPath = finalPath.replace(regex, v || `{${k}}`);
+                        }
+                    }
+                });
+
+                // Update Modal Input
+                const fullUrl = window.smartJoin ? window.smartJoin(base, finalPath) : (base + finalPath);
+                document.getElementById('inpUrl').value = fullUrl;
+
+                // Update Main List Item (The user requested this sync!)
+                if (window.activeItemPathEl) {
+                    window.activeItemPathEl.innerText = fullUrl;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // --- Network ---
+        // --- Network ---
+        window.sendRequest = async function () {
+            try {
+                const box = document.getElementById('responseBox');
+                const spinner = document.getElementById('loader');
+
+                box.style.display = 'block';
+                box.innerText = '请求中...';
+                spinner.style.display = 'block';
+
+                const method = document.getElementById('inpMethod').value;
+                const isJson = document.getElementById('jsonParamsArea').style.display !== 'none';
+                const bodyMode = isJson ? 'json' : 'form';
+
+                // 1. Prepare URL
+                const baseUrl = document.getElementById('target-host').value;
+                const path = document.getElementById('inpUrl').value;
+                const url = ApiClient.resolveUrl(baseUrl, path);
+
+                // 2. Prepare Body
+                let bodyStr = '';
+                if (isJson) {
+                    bodyStr = document.getElementById('inpJson').value;
+                } else {
+                    // Convert KV Rows to "Key: Value\n" format for ApiClient
+                    const rows = [];
+                    document.querySelectorAll('#kvContainer .kv-row').forEach(row => {
+                        const k = row.querySelector('.key').value.trim();
+                        const v = row.querySelector('.val').value.trim();
+                        if (k) rows.push(k + ': ' + v);
+                    });
+                    bodyStr = rows.join('\n');
+                }
+
+                // 3. Execute
+                const headers = {};
+                // Collect any custom headers if we had a UI for them in Test Modal (currently we don't, but ApiClient supports it)
+
+                const res = await ApiClient.send(method, url, headers, bodyStr, bodyMode);
+
+                // 4. Render
+                spinner.style.display = 'none';
+
+                // Status Bar (Test Modal has t-status-bar)
+                const statusBar = document.getElementById('t-status-bar');
+                const statusBadge = document.getElementById('t-status');
+                const timeEl = document.getElementById('t-time');
+                const sizeEl = document.getElementById('t-size');
+
+                if (statusBar) {
+                    statusBar.style.display = 'flex';
+                    statusBadge.innerText = res.status + ' ' + res.statusText;
+                    statusBadge.style.background = res.ok ? '#28a745' : '#dc3545';
+                    timeEl.innerText = res.duration + ' ms';
+                    sizeEl.innerText = res.size + ' B';
+                }
+
+                box.innerText = res.text;
+                // Auto formatting is already done by ApiClient if JSON
+
+            } catch (e) {
+                console.error(e);
+                const box = document.getElementById('responseBox');
+                const spinner = document.getElementById('loader');
+                if (spinner) spinner.style.display = 'none';
+                if (box) box.innerText = 'Error: ' + e.message;
+            }
+        };
+
+        window.exportMd = function (urlFilter) {
+            let url = '/api-dashboard/export-md';
+            if (urlFilter) {
+                // Ensure we only pass the path, not query params if they exist in the urlFilter arg
+                url += '?url=' + encodeURIComponent(urlFilter);
+            }
+            window.open(url, '_blank');
+        };
+
+        // --- UI ---
+        function showModal() {
+            const ov = document.getElementById('overlay');
+            const mo = document.getElementById('modal');
+            ov.style.display = 'block';
+            mo.style.display = 'block';
+            // Force reflow
+            void mo.offsetWidth;
+            ov.classList.add('active');
+            mo.classList.add('active');
+        }
+
+        window.closeModal = function () {
+            const ov = document.getElementById('overlay');
+            const mo = document.getElementById('modal');
+            ov.classList.remove('active');
+            mo.classList.remove('active');
+            setTimeout(function () {
+                ov.style.display = 'none';
+                mo.style.display = 'none';
+            }, 300);
+        };
+
+        window.setMethod = setMethod;
+
+        // --- Collapsible Sections ---
+        window.toggleSection = function (header) {
+            const list = header.nextElementSibling;
+            const chevron = header.querySelector('.chevron');
+
+            if (list.style.maxHeight === '0px') {
+                // Expand
+                list.style.maxHeight = '2000px'; // sufficiently large
+                list.style.opacity = '1';
+                list.style.marginTop = '0'; // reset margin if needed
+                chevron.style.transform = 'rotate(0deg)';
+            } else {
+                // Collapse
+                list.style.maxHeight = '0px';
+                list.style.opacity = '0';
+                list.style.marginTop = '-10px'; // slight squeeze
+                chevron.style.transform = 'rotate(-90deg)';
+            }
+        };
+
+        // --- Parallax Background ---
+        document.addEventListener('scroll', function () {
+            const scrolled = window.scrollY;
+            // Move background at 20% speed of scroll for depth effect
+            document.body.style.backgroundPositionY = -(scrolled * 0.2) + 'px';
+        });
+    </script>
+</head>
+
+<body>
+
+    <div class="container">
+        <header>
+            <div class="planet-glow"></div>
+            <h1>API 仪表盘</h1>
+            <p class="subtitle">极简 · 高效 · 智能</p>
+            <div class="glass-bar">
+                <label for="target-host"
+                    style="font-weight: 600; color: var(--text-secondary); font-size: 13px;">目标:</label>
+                <input type="text" id="target-host" class="glass-input" th:value="${baseUrl}"
+                    placeholder="http://127.0.0.1:8080">
+                <a href="javascript:void(0)" onclick="window.openGlobalConsole()" class="glass-btn">
+                    <span>🛠️</span> 调试台
+                </a>
+            </div>
+        </header>
+
+        <!-- Loop Groups -->
+        <div id="api-list-container">
+            <div style="text-align:center; padding: 40px; color:white;">
+                Loading API Definitions...
+            </div>
+        </div>
+
+        <script>
+            // --- Client-Side Rendering Logic ---
+            let CONTROLLER_GROUPS = {};
+            let BASE_URL = "";
+
+            async function initDashboard() {
+                try {
+                    // Fetch Meta Data
+                    const res = await fetch('api-dashboard/meta');
+                    if (!res.ok) throw new Error("Failed to load dashboard data");
+                    const data = await res.json();
+
+                    CONTROLLER_GROUPS = data.controllerGroups;
+                    BASE_URL = data.baseUrl;
+
+                    // Set Global Base URL for console if needed
+                    const hostInput = document.getElementById('target-host');
+                    if (hostInput && !hostInput.value) hostInput.value = BASE_URL;
+
+                    renderSidebar();
+                } catch (e) {
+                    console.error(e);
+                    const c = document.getElementById('api-list-container');
+                    if (c) c.innerHTML = `<div style="padding:20px;color:red">Error loading API data: ${e.message}</div>`;
+                }
+            }
+
+            function renderSidebar() {
+                const container = document.getElementById('api-list-container');
+                if (!container) return;
+                container.innerHTML = '';
+
+                for (const [groupName, endpoints] of Object.entries(CONTROLLER_GROUPS)) {
+                    const section = document.createElement('div');
+                    section.className = 'controller-section';
+
+                    // Title
+                    const title = document.createElement('div');
+                    title.className = 'controller-title';
+                    title.textContent = groupName;
+                    title.style.cursor = 'pointer';
+                    title.onclick = function () { toggleSection(this); };
+                    // Add chevron
+                    const che = document.createElement('span');
+                    che.className = 'chevron';
+                    che.textContent = '▼';
+                    che.style.float = 'right';
+                    che.style.fontSize = '14px';
+                    che.style.opacity = '0.7';
+                    title.appendChild(che);
+
+                    section.appendChild(title);
+
+                    const list = document.createElement('div');
+                    list.className = 'api-list';
+
+                    endpoints.forEach((ep) => {
+                        const item = document.createElement('div');
+                        item.className = 'api-item';
+                        item.style.cursor = 'pointer';
+                        // Click item to open test modal
+                        item.onclick = function () { openTest(ep); };
+
+                        const badge = document.createElement('span');
+                        let methodStr = ep.method.replace(/[\[\]]/g, '');
+                        if (methodStr === 'getAll') methodStr = 'ALL';
+                        badge.className = `method-badge ${methodStr}`;
+                        badge.textContent = methodStr;
+
+                        const info = document.createElement('div');
+                        info.className = 'api-info';
+                        const pathEl = document.createElement('div');
+                        pathEl.className = 'api-path';
+                        pathEl.textContent = ep.url;
+                        const descEl = document.createElement('div');
+                        descEl.className = 'api-desc';
+                        descEl.textContent = ep.description || ep.function;
+                        info.appendChild(pathEl);
+                        info.appendChild(descEl);
+
+                        // Action Group
+                        const actions = document.createElement('div');
+                        actions.style.display = 'flex';
+                        actions.style.gap = '8px';
+                        actions.onclick = (e) => e.stopPropagation(); // Prevent row click
+
+                        // 1. Export Button
+                        const btnExport = document.createElement('a');
+                        btnExport.className = 'btn-test';
+                        btnExport.textContent = '📜 记录';
+                        btnExport.title = '导出此接口记录';
+                        btnExport.style.textDecoration = 'none';
+                        btnExport.style.lineHeight = '20px';
+                        btnExport.style.color = 'var(--text-secondary)';
+                        btnExport.href = `api-dashboard/export-md?url=${encodeURIComponent(ep.url)}`;
+                        btnExport.target = '_blank';
+                        actions.appendChild(btnExport);
+
+                        // 2. Debugger Button
+                        const btnDebug = document.createElement('button');
+                        btnDebug.className = 'btn-test';
+                        btnDebug.textContent = '🛠️';
+                        btnDebug.title = '在新页面调试';
+                        btnDebug.onclick = () => openConsoleWithPreset(ep);
+                        actions.appendChild(btnDebug);
+
+                        // 3. Test Button
+                        const btnTest = document.createElement('button');
+                        btnTest.className = 'btn-test';
+                        btnTest.textContent = '测试';
+                        btnTest.onclick = () => openTest(ep);
+                        actions.appendChild(btnTest);
+
+                        item.appendChild(badge);
+                        item.appendChild(info);
+                        item.appendChild(actions);
+                        list.appendChild(item);
+                    });
+                    section.appendChild(list);
+                    container.appendChild(section);
+                }
+            }
+
+            function openConsoleWithPreset(ep) {
+                const modal = document.getElementById('consoleModal');
+                if (!modal) return;
+
+                // Populate
+                document.getElementById('c-method').value = ep.method.replace(/[\[\]]/g, '');
+                document.getElementById('c-url').value = ep.path;
+
+                // Set Body Mode
+                setConsoleBodyType(ep.paramType === 'JSON' ? 'json' : 'form');
+                if (ep.paramType === 'JSON' && ep.bodyTemplate) {
+                    document.getElementById('c-body').value = ep.bodyTemplate;
+                } else {
+                    document.getElementById('c-body').value = '';
+                }
+
+                // Show
+                modal.style.display = 'block';
+                modal.querySelector('.modal').style.display = 'block'; // Ensure inner matches
+                setTimeout(() => {
+                    modal.classList.add('active');
+                    modal.querySelector('.modal').classList.add('active');
+                }, 10);
+            }
+
+            function openTest(api) {
+                // Populate URL
+                document.getElementById('inpUrl').value = api.url;
+                window.currentPathStr = api.url; // for dynamic param replacement
+
+                // Set Method
+                let m = api.method.replace(/[\[\]]/g, '');
+                if (m === 'getAll') m = 'GET';
+                setMethod(m);
+
+                // Set Body/Params
+                const isJson = (api.paramType === 'JSON');
+                const bodyModeEntry = document.querySelector(`.body-toggle[data-mode="${isJson ? 'json' : 'form'}"]`);
+                if (bodyModeEntry) setBodyMode(isJson ? 'json' : 'form');
+
+                if (isJson) {
+                    document.getElementById('inpJson').value = api.bodyTemplate || '';
+                    document.getElementById('jsonParamsArea').style.display = 'block';
+                    document.getElementById('kvParamsArea').style.display = 'none';
+                } else {
+                    document.getElementById('jsonParamsArea').style.display = 'none';
+                    document.getElementById('kvParamsArea').style.display = 'block';
+                    document.getElementById('kvContainer').innerHTML = ''; // clear old
+                }
+
+                showModal();
+            }
+
+            function setMethod(m) {
+                document.getElementById('inpMethod').value = m;
+                document.querySelectorAll('#methodControl .segment').forEach(el => {
+                    if (el.innerText === m) el.classList.add('active');
+                    else el.classList.remove('active');
+                });
+
+                // Auto-Switch Body Mode
+                if (m === 'GET' || m === 'DELETE') {
+                    setBodyMode('form');
+                } else {
+                    setBodyMode('json');
+                }
+            }
+
+            function setBodyMode(mode) {
+                document.querySelectorAll('.body-toggle').forEach(el => {
+                    if (el.dataset.mode === mode) el.classList.add('active');
+                    else el.classList.remove('active');
+                });
+
+                if (mode === 'json') {
+                    document.getElementById('jsonParamsArea').style.display = 'block';
+                    document.getElementById('kvParamsArea').style.display = 'none';
+                } else {
+                    document.getElementById('jsonParamsArea').style.display = 'none';
+                    document.getElementById('kvParamsArea').style.display = 'block';
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', initDashboard);
+        </script>
+    </div>
+
+    <!-- Modal -->
+    <div id="overlay" class="overlay" onclick="closeModal()"></div>
+    <div id="modal" class="modal">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h3 style="margin:0; font-size: 20px;">接口测试</h3>
+            <div id="loader" class="spinner"></div>
+        </div>
+
+        <div class="form-group">
+            <span class="form-label">请求地址</span>
+            <input type="text" id="inpUrl" class="form-input" readonly>
+        </div>
+
+        <div class="form-group">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="form-label">请求方法</span>
+                <div class="segmented-control" id="bodyTypeControl" style="display:none; font-size:12px;">
+                    <div class="segment body-toggle active" data-mode="json" onclick="setBodyMode('json')">JSON</div>
+                    <div class="segment body-toggle" data-mode="form" onclick="setBodyMode('form')">Form</div>
+                </div>
+            </div>
+            <div class="segmented-control" id="methodControl">
+                <div class="segment" onclick="setMethod('GET')">GET</div>
+                <div class="segment" onclick="setMethod('POST')">POST</div>
+                <div class="segment" onclick="setMethod('PUT')">PUT</div>
+                <div class="segment" onclick="setMethod('DELETE')">DEL</div>
+            </div>
+            <input type="hidden" id="inpMethod">
+        </div>
+
+        <!-- Params Toggle (Auto Switched) -->
+        <div id="kvParamsArea" style="display:none;">
+            <div class="form-group">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span class="form-label" id="paramLabel">URL 参数</span>
+                    <button class="btn-add" onclick="addKv()">+ 添加参数</button>
+                </div>
+                <div id="kvContainer"></div>
+            </div>
+        </div>
+
+        <div id="jsonParamsArea" style="display:none;">
+            <div class="form-group">
+                <span class="form-label">请求体 (JSON)</span>
+                <button class="btn-add" onclick="formatJson()">格式化</button>
+            </div>
+            <textarea id="inpJson" rows="8"></textarea>
+        </div>
+
+        <div style="display:flex; justify-content: flex-end; gap:10px; margin-top:20px; margin-bottom: 10px;">
+            <button class="btn-cancel" onclick="closeModal()">关闭</button>
+            <button class="btn-primary" onclick="window.sendRequest()">发送请求 (Send)</button>
+        </div>
+
+        <!-- Status Bar (Console Style) -->
+        <div id="t-status-bar"
+            style="border: 1px solid var(--divider); border-bottom: none; background: rgba(255,255,255,0.02); padding: 8px 12px; display:none; align-items: center; gap: 16px; font-size: 13px; color: var(--text-secondary); border-radius: 6px 6px 0 0;">
+            <span id="t-status" class="c-badge"
+                style="padding: 2px 8px; border-radius: 4px; background: #333; color: #fff; font-weight: bold; font-size: 12px;">Ready</span>
+            <span style="margin-left:auto;">⏱ <span id="t-time">0 ms</span></span>
+            <span>📦 <span id="t-size">0 B</span></span>
+        </div>
+
+        <div id="responseBox" class="response-box"
+            style="border-top-left-radius: 0; border-top-right-radius: 0; margin-top:0;"></div>
+    </div>
+
+    <!-- Console Modal (Advanced) -->
+    <div id="consoleModal" class="overlay" style="display: none;">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h3>🛠️ 高级调试台 (Console)</h3>
+                <button class="btn-icon" onclick="closeConsoleModal()">&times;</button>
+            </div>
+
+            <div class="console-layout">
+                <!-- Left: Request -->
+                <div class="c-col-left">
+                    <!-- URL Bar -->
+                    <div style="display: flex; gap: 10px;">
+                        <select id="c-method" class="form-input"
+                            style="width: 100px; text-align:center; font-weight:bold;" onchange="updateConsoleUI()">
+                            <option value="GET">GET</option>
+                            <option value="POST" selected>POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="PATCH">PATCH</option>
+                        </select>
+                        <input type="text" id="c-url" class="form-input" placeholder="/api/...">
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label style="font-size: 12px; color:#666; white-space: nowrap;">Base URL:</label>
+                        <input type="text" id="c-base" class="form-input"
+                            style="font-family: monospace; font-size: 12px; color: #666;">
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="console-tabs">
+                        <div class="c-tab active" onclick="switchConsoleTab(this, 'c-tab-body')">Body</div>
+                        <div class="c-tab" onclick="switchConsoleTab(this, 'c-tab-headers')">Headers</div>
+                    </div>
+
+                    <!-- Tab Content -->
+                    <div id="c-tab-body" class="c-tab-content">
+                        <!-- Body Type Toggle (Postman Style) -->
+                        <div id="c-body-controls"
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                            <span style="font-size:12px; color:#aaa;">Request Body</span>
+                            <div class="segmented-control" style="font-size:11px;">
+                                <div class="segment active" id="c-bt-json" onclick="setConsoleBodyType('json')">JSON
+                                </div>
+                                <div class="segment" id="c-bt-form" onclick="setConsoleBodyType('form')">Form</div>
+                            </div>
+                        </div>
+                        <div id="c-body-container">
+                            <textarea id="c-body" class="console-editor"
+                                placeholder="{ &quot;key&quot;: &quot;value&quot; }"></textarea>
+                        </div>
+                        <div id="c-body-msg"
+                            style="display:none; text-align:center; padding: 20px; color: #666; font-size: 13px;">
+                            GET 请求不包含 Body (GET requests usually have no body)
+                        </div>
+
+
+                    </div>
+                    <div id="c-tab-headers" class="c-tab-content" style="display:none;">
+                        <div style="margin-bottom: 5px; display: flex; gap: 10px; align-items: center;">
+                            <label style="font-size: 12px; color: #aaa;">预设 Header:</label>
+                            <select class="form-input" style="font-size: 12px; height: 26px; padding: 0 8px;"
+                                onchange="addHeaderPreset(this)">
+                                <option value="">-- 选择并添加 --</option>
+                                <option value="Content-Type: application/json">Content-Type: JSON</option>
+                                <option value="Content-Type: application/x-www-form-urlencoded">Content-Type: Form
+                                </option>
+                                <option value="Authorization: Bearer ">Authorization: Bearer ...</option>
+                                <option value="User-Agent: SmartRelay/1.0">User-Agent: SmartRelay</option>
+                                <option value="Accept: application/json">Accept: JSON</option>
+                            </select>
+                        </div>
+                        <textarea id="c-headers" style="height: 300px;" placeholder="Header: Value (一行一个)"></textarea>
+
+                        <script>
+                            function addHeaderPreset(select) {
+                                const val = select.value;
+                                if (!val) return;
+                                const area = document.getElementById('c-headers');
+                                if (area.value.trim()) area.value += '\n';
+                                area.value += val;
+                                select.value = ""; // reset
+                            }
+                        </script>
+                    </div>
+
+                    <div style="margin-top: auto; display: flex; justify-content: flex-end; gap: 10px;">
+                        <button class="btn-cancel" onclick="closeConsoleModal()">关闭</button>
+                        <button class="btn-primary" onclick="execConsoleRequest()">发送请求 (Send)</button>
+                    </div>
+                </div>
+
+                <!-- Right: Response -->
+                <div class="c-col-right">
+                    <div style="font-size: 13px; font-weight: 600; color: #666; margin-bottom: 10px;">响应结果</div>
+
+                    <div id="c-status-bar" class="c-status-bar" style="display:none;">
+                        <span id="c-status" class="c-badge">-</span>
+                        <span id="c-time">0 ms</span>
+                        <span id="c-size">0 B</span>
+                    </div>
+
+                    <pre id="c-res-body"
+                        style="font-family: 'SF Mono', monospace; font-size: 11px; color: #333; white-space: pre-wrap; overflow-wrap: break-word;">等待请求...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script moved to head -->
+</body>
+
+</html>

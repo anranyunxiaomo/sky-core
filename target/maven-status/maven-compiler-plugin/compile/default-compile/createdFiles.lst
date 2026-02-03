@@ -1,0 +1,7 @@
+com/sky/core/util/JavaDocReader.class
+com/sky/core/controller/ApiDashboardController.class
+com/sky/core/config/WebConfig.class
+com/sky/core/config/ApiDashboardConfig.class
+com/sky/core/util/SpringCompatUtils.class
+com/sky/core/SkyCoreApplication.class
+com/sky/core/annotation/EnableApiDashboard.class
