@@ -1,23 +1,38 @@
-# Sky Core
+<div align="center">
 
-**极简、智能的 Spring Boot API 仪表盘**
+# Sky Core ☁️
 
-Sky Core 是一个轻量级的 Spring Boot Starter，旨在为后端开发者提供**零配置**、**高颜值**的 API 调试与文档体验。它采用了 Apple Design 设计风格，支持自动解析 JavaDoc 生成文档，让您的 API 调试既高效又赏心悦目。
+**极简主义的 Spring Boot API 调试仪表盘**
 
-![API Dashboard](https://github.com/anranyunxiaomo/sky-core/raw/main/doc/screenshot.png)
-*(如果有截图可以放在这里，暂留个占位)*
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.anranyunxiaomo/sky-core.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.anranyunxiaomo/sky-core)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Build Status](https://github.com/anranyunxiaomo/sky-core/actions/workflows/deploy.yml/badge.svg)](https://github.com/anranyunxiaomo/sky-core/actions)
 
-## ✨ 核心特性
+<p align="center">
+  <img src="https://via.placeholder.com/800x400?text=Apple-Style+API+Dashboard+Preview" alt="Sky Core Dashboard" width="100%">
+</p>
 
-- **🍎 Apple-Style 界面**: 采用模糊毛玻璃 (Glassmorphism) 与卡片式设计，提供极致的视觉体验。
-- **📝 零配置文档**: 直接读取代码中的 **JavaDoc 注释** 生成接口文档，无需任何注解（也支持 `@ApiDesc`）。修改代码刷新即变。
-- **⚡️ 智能调试**: 自动分析接口参数，支持递归生成复杂对象的 JSON 模板，一键发送请求。
-- **🔌 纯净集成**: 不依赖 Swagger/OpenAPI，无侵入性，仅需一个依赖和注解即可开启。
+</div>
 
-## 🚀 快速集成
+---
+
+## 📖 简介 | Introduction
+
+**Sky Core** 是一个专为追求极致体验的开发者设计的 Spring Boot Starter。它摒弃了传统 Swagger/OpenAPI 的繁杂配置，**直接解析代码中的 JavaDoc** 生成 API 文档，并提供了一个具有 **Apple Design** 设计风格的现代化调试界面。
+
+### ✨ 核心特性
+
+- **🍎 极致 UI 设计**: 采用毛玻璃 (Glassmorphism) 与卡片式布局，赏心悦目。
+- **📝 零侵入文档**: 无需 `@ApiOperation` 等任何注解，**直接读取 Java 注释**。
+- **⚡️ 智能调试**: 自动解析参数结构，一键生成 JSON 模板，支持复杂对象递归。
+- **🔌 即插即用**: 引入依赖 -> 加注解 -> 启动，三步完成配置。
+
+---
+
+## 🚀 快速开始 | Quick Start
 
 ### 1. 引入依赖
-在您的 Spring Boot 项目 `pom.xml` 中添加：
+在您的 `pom.xml` 中添加最新版本依赖：
 
 ```xml
 <dependency>
@@ -28,11 +43,15 @@ Sky Core 是一个轻量级的 Spring Boot Starter，旨在为后端开发者提
 ```
 
 ### 2. 开启功能
-在启动类上添加 **`@EnableApiDashboard`** 注解：
+在 Spring Boot 启动类上添加注解 **`@EnableApiDashboard`**：
 
 ```java
+import com.sky.core.annotation.EnableApiDashboard;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
 @SpringBootApplication
-@EnableApiDashboard // <--- 只需要这一行
+@EnableApiDashboard // <--- 关键一步
 public class MyApplication {
     public static void main(String[] args) {
         SpringApplication.run(MyApplication.class, args);
@@ -40,46 +59,61 @@ public class MyApplication {
 }
 ```
 
-### 3. 访问仪表盘
-启动项目后，访问：
+### 3. 开始使用
+启动项目，访问：
 👉 **`http://localhost:8080/api-dashboard`**
 
 ---
 
-## 📖 使用指南
+## � 编写文档 | Writing Docs
 
-### 编写文档
-您只需要按规范编写 Java 注释，Dashboard 会自动提取：
+**忘记那些繁琐的注解吧！** Sky Core 能够理解您的代码和注释。
 
 ```java
 /**
- * 用户管理模块
- * (这里的一级注释将作为左侧菜单的分组名称)
+ * 📦 商品管理模块
+ * (类上的注释将成为左侧菜单的分组名称)
  */
 @RestController
-@RequestMapping("/users")
-public class UserController {
+@RequestMapping("/products")
+public class ProductController {
+
+    private final ProductService service;
 
     /**
-     * 创建新用户
-     * (这里的方法注释将作为接口的描述)
+     * 🔍 根据ID查询商品详情
+     * (方法上的注释将成为接口描述)
+     */
+    @GetMapping("/{id}")
+    public Result<ProductDTO> getDetail(@PathVariable Long id) {
+        return service.findById(id);
+    }
+
+    /**
+     * ✨ 创建新商品
+     * 支持复杂参数结构解析
      */
     @PostMapping("/create")
-    public Result create(@RequestBody UserDTO user) {
-        return service.create(user);
+    public Result<Long> create(@RequestBody ProductCreateRequest request) {
+        return service.create(request);
     }
 }
 ```
 
-### 在线调试
-1.  点击接口名称打开详情卡片。
-2.  点击右侧 **"Test"** 按钮。
-3.  系统会自动生成请求参数模板（支持复杂 JSON 结构）。
-4.  点击 **"Send"** 查看实时响应。
+> **提示**: 修改代码或注释后，重启项目（或使用热部署）刷新页面即可看到更新。
 
-## ⚙️ 生产环境建议
-建议仅在开发 (`dev`) 或测试 (`test`) 环境开启此功能。
-您可以通过 Spring 的 `@Profile` 或配置属性来控制是否加载 `@EnableApiDashboard` 注解的配置类。
+---
 
-## 📄 许可证
-MIT License
+## 🛠 开发与构建 | Development
+
+如果您想参与本项目开发或本地构建：
+
+```bash
+git clone https://github.com/anranyunxiaomo/sky-core.git
+cd sky-core
+mvn clean install
+```
+
+## 📄 许可证 | License
+
+本项目采用 [Apache 2.0 许可证](LICENSE)。
