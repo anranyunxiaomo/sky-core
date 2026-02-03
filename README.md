@@ -18,7 +18,11 @@
 
 ## 📖 简介 | Introduction
 
-**Sky Core** 是一个专为追求极致体验的开发者设计的 Spring Boot Starter。它摒弃了传统 Swagger/OpenAPI 的繁杂配置，**直接解析代码中的 JavaDoc** 生成 API 文档，并提供了一个具有 **Apple Design** 设计风格的现代化调试界面。
+**天枢 (Sky Core)**，取自北斗七星之首，意为众星之枢纽。
+
+作为 Spring Boot 应用的 **API 指挥中枢**，它以极简主义为核心设计理念，为您提供**零配置**、**高颜值**的接口调试体验。它摒弃了传统 Swagger/OpenAPI 的繁杂配置，**直接解析代码中的 JavaDoc** 自动生成文档，并提供了一个具有 Apple Design 设计风格的现代化调试仪表盘。
+
+无需任何额外注解，仅需一行代码，即可让您的 API 如星辰般清晰呈现。
 
 ### ✨ 核心特性
 
