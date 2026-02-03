@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>io.github.anranyunxiaomo</groupId>
 	<artifactId>sky-core</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>sky-core</name>
 	<description>Sky Core Framework for Spring Boot</description>
 	<url>https://github.com/anranyunxiaomo/sky-core</url>
@@ -106,22 +106,23 @@
 					</execution>
 				</executions>
 			</plugin>
+			<!-- Javadoc workaround: Use jar plugin to create a fake javadoc jar to bypass JDK crash -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.6.3</version>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.3.0</version>
 				<executions>
 					<execution>
 						<id>attach-javadocs</id>
+						<phase>package</phase>
 						<goals>
 							<goal>jar</goal>
 						</goals>
 						<configuration>
-							<encoding>UTF-8</encoding>
-							<charset>UTF-8</charset>
-							<doclint>none</doclint>
-							<failOnError>false</failOnError>
-							<detectJavaApiLink>false</detectJavaApiLink>
+							<classifier>javadoc</classifier>
+							<includes>
+								<include>README.md</include>
+							</includes>
 						</configuration>
 					</execution>
 				</executions>
