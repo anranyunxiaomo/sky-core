@@ -8,12 +8,12 @@
 		<version>2.7.14</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.zk.sky.core</groupId>
+	<groupId>io.github.anranyunxiaomo</groupId>
 	<artifactId>sky-core</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>sky-core</name>
 	<description>Sky Core Framework for Spring Boot</description>
-	<url>https://github.com/YOUR_USERNAME/sky-core</url>
+	<url>https://github.com/anranyunxiaomo/sky-core</url>
 
 	<licenses>
 		<license>
@@ -24,16 +24,16 @@
 
 	<developers>
 		<developer>
-			<id>YOUR_ID</id>
-			<name>YOUR_NAME</name>
-			<email>YOUR_EMAIL@example.com</email>
+			<id>anranyunxiaomo</id>
+			<name>anranyunxiaomo</name>
+			<email>anranyunxiaomo@gmail.com</email>
 		</developer>
 	</developers>
 
 	<scm>
-		<connection>scm:git:git://github.com/YOUR_USERNAME/sky-core.git</connection>
-		<developerConnection>scm:git:ssh://github.com:YOUR_USERNAME/sky-core.git</developerConnection>
-		<url>https://github.com/YOUR_USERNAME/sky-core</url>
+		<connection>scm:git:git://github.com/anranyunxiaomo/sky-core.git</connection>
+		<developerConnection>scm:git:ssh://github.com:anranyunxiaomo/sky-core.git</developerConnection>
+		<url>https://github.com/anranyunxiaomo/sky-core</url>
 	</scm>
 
 	<properties>
@@ -120,7 +120,8 @@
 							<encoding>UTF-8</encoding>
 							<charset>UTF-8</charset>
 							<doclint>none</doclint>
-							<failOnError>false</failOnError> 
+							<failOnError>false</failOnError>
+							<detectJavaApiLink>false</detectJavaApiLink>
 						</configuration>
 					</execution>
 				</executions>
