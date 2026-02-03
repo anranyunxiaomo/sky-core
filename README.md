@@ -1,6 +1,6 @@
 <div align="center">
 
-# Sky Core ☁️
+# Sky Core ☁️ （天枢） 
 
 **极简主义的 Spring Boot API 调试仪表盘**
 
