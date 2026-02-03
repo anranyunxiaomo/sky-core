@@ -17,7 +17,7 @@ jobs:
         with:
           java-version: '8'
           distribution: 'temurin'
-          server-id: ossrh
+          server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
 
@@ -25,20 +25,9 @@ jobs:
         run: |
            echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
 
-      - name: Build and Sign (No Deploy)
-        run: mvn clean verify -P release -DskipTests -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
-
-      - name: Create Deployment Bundle
-        run: |
-          mkdir deployment-bundle
-          cp target/*.jar target/*.pom target/*.asc deployment-bundle/
-          # Remove Exec jar if exists as it's not for central
-          rm -f deployment-bundle/*-exec.jar
-          cd deployment-bundle
-          zip -r ../bundle.zip .
-
-      - name: Upload Bundle to GitHub
-        uses: actions/upload-artifact@v4
-        with:
-          name: maven-central-bundle
-          path: bundle.zip
+      - name: Build and Deploy (Modern)
+        run: mvn clean deploy -P release -DskipTests -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
+        env:
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN }}
