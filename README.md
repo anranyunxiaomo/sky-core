@@ -50,17 +50,29 @@ Sky Core 打造了沉浸式的 API 调试环境，每一个像素都经过精心
 
 ---
 
+## ✅ 环境要求 | Requirements
+
+- **JDK**: 1.8 +
+- **Spring Boot**: 2.7.x (兼容 3.x)
+
+---
+
 ## 🚀 快速开始 | Quick Start
 
 ### 1. 引入依赖
-在您的 `pom.xml` 中添加最新版本依赖：
 
+#### Maven
 ```xml
 <dependency>
     <groupId>io.github.anranyunxiaomo</groupId>
     <artifactId>sky-core</artifactId>
     <version>0.0.1</version>
 </dependency>
+```
+
+#### Gradle
+```groovy
+implementation 'io.github.anranyunxiaomo:sky-core:0.0.1'
 ```
 
 ### 2. 开启功能
@@ -134,6 +146,14 @@ git clone https://github.com/anranyunxiaomo/sky-core.git
 cd sky-core
 mvn clean install
 ```
+
+## 🤝 贡献与支持 | Contributing & Support
+
+欢迎提交 [Issue](https://github.com/anranyunxiaomo/sky-core/issues) 或 Pull Request 帮助天枢变得更好。
+
+- **🌟 Star 本项目**: 如果您觉得有帮助，请点亮右上角的 Star 支持作者。
+- **🐞 报告 Bug**: 请详细描述复现步骤。
+- **💡 提出建议**: 我们渴望听到您的奇思妙想。
 
 ## 📄 许可证 | License
 
