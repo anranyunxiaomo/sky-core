@@ -9,7 +9,7 @@
 [![Build Status](https://github.com/anranyunxiaomo/sky-core/actions/workflows/deploy.yml/badge.svg)](https://github.com/anranyunxiaomo/sky-core/actions)
 
 <p align="center">
-  <img src="https://via.placeholder.com/800x400?text=Apple-Style+API+Dashboard+Preview" alt="Sky Core Dashboard" width="100%">
+  <img src="doc/screenshot.png" alt="Sky Core Dashboard" width="100%">
 </p>
 
 </div>
