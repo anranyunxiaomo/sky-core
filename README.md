@@ -32,7 +32,9 @@
 - **🍎 极致 UI 设计**: 采用毛玻璃 (Glassmorphism) 与卡片式布局，赏心悦目。
 - **📝 零侵入文档**: 无需 `@ApiOperation` 等任何注解，**直接读取 Java 注释**。
 - **⚡️ 智能调试**: 自动解析参数结构，一键生成 JSON 模板，支持复杂对象递归。
-- **🔌 即插即用**: 引入依赖 -> 加注解 -> 启动，三步完成配置。
+- **� 文档导出**: 支持将 API 接口一键导出为 **Markdown** 格式，方便沉淀与分享。
+- **🕒 历史回溯**: 自动保存调试请求历史，随时一键恢复现场。
+- **�🔌 即插即用**: 引入依赖 -> 加注解 -> 启动，三步完成配置。
 
 ---
 
@@ -44,6 +46,11 @@ Sky Core 打造了沉浸式的 API 调试环境，每一个像素都经过精心
 - **智能调试台**: 
   - **动态参数生成**: 根据 Java 对象结构自动生成 JSON 请求体模板。
   - **实时响应预览**: 支持 JSON 高亮、折叠，状态码一目了然。
+  - **⚙️ 全局配置**: 支持设置全局请求头 (Headers)，自动应用于所有请求。
+  - **⌨️ 快捷键支持**: 
+    - `Ctrl/Cmd + K`: 快速聚焦搜索框
+    - `Ctrl/Cmd + Enter`: 提交请求
+    - `Esc`: 关闭弹窗 
 - **极速响应**: 单页应用 (SPA) 架构，无刷新切换接口，操作如丝般顺滑。
   
 > "好的工具应该是隐形的，让您感觉不到它的存在，却又无处不在地辅助您。"
@@ -66,13 +73,13 @@ Sky Core 打造了沉浸式的 API 调试环境，每一个像素都经过精心
 <dependency>
     <groupId>io.github.anranyunxiaomo</groupId>
     <artifactId>sky-core</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
 ```
 
 #### Gradle
 ```groovy
-implementation 'io.github.anranyunxiaomo:sky-core:0.0.1'
+implementation 'io.github.anranyunxiaomo:sky-core:0.0.2'
 ```
 
 ### 2. 开启功能
@@ -134,6 +141,34 @@ public class ProductController {
 ```
 
 > **提示**: 修改代码或注释后，重启项目（或使用热部署）刷新页面即可看到更新。
+
+---
+
+## 🏗️ 进阶配置 | Advanced Config
+
+Sky Core 坚持**零依赖**原则。默认情况下，它仅在开发环境（本地 IDE）能读取接口注释文档。
+如果您希望在**生产环境 (JAR包运行)** 中也能显示文档，请在您的 `pom.xml` 中添加以下配置，将源码一起打包：
+
+```xml
+<build>
+    <resources>
+        <!-- 保持默认资源 -->
+        <resource>
+            <directory>src/main/resources</directory>
+        </resource>
+        <!-- ✨ 关键：将 Java 源码也打包进 JAR -->
+        <resource>
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.java</include>
+            </includes>
+            <filtering>false</filtering>
+        </resource>
+    </resources>
+</build>
+```
+
+> **注意**: 这会将 `.java` 源码文件包含在发布的 JAR 包中。对于内部项目通常无碍，但如果是闭源商业交付，请酌情考虑。
 
 ---
 

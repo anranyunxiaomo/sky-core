@@ -19,6 +19,8 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import java.util.*;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
@@ -26,10 +28,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Collections;
 import org.springframework.beans.BeanUtils;
 import com.sky.core.util.JavaDocReader;
+import com.sky.core.util.SpringCompatUtils;
+import static com.sky.core.util.StringUtils.*;
 
 /**
  * API 仪表盘控制器
@@ -41,30 +48,179 @@ import com.sky.core.util.JavaDocReader;
 @Controller
 public class ApiDashboardController {
 
+    // --- 常量定义 ---
+    private static final int MAX_RECURSION_DEPTH = 3;
+    // ✅ 性能优化：根据实际使用调整容量（从2048增加到4096，减少扩容次数）
+    private static final int MARKDOWN_BUILDER_CAPACITY = 4096;
+    private static final int LOGO_WIDTH_PX = 120;
+    private static final String LOGO_RESOURCE_PATH = "static/logo.jpg";
+    
+    // 仪表盘路径集合（用于过滤）
+    private static final java.util.Set<String> DASHBOARD_PATHS = java.util.Collections.unmodifiableSet(
+        new java.util.HashSet<>(java.util.Arrays.asList(
+            "/error",
+            "/api-dashboard",
+            "/api-dashboard/debugger",
+            "/api-dashboard/meta",
+            "/api-dashboard/export-md"
+        ))
+    );
+    
+    // --- 静态资源缓存 ---
+    private static final String LOGO_BASE64;
+    
+    static {
+        // 启动时加载 Logo 并缓存（避免每次导出都重新编码）
+        String tempLogo = null;
+        try {
+            org.springframework.core.io.ClassPathResource resource = new org.springframework.core.io.ClassPathResource(LOGO_RESOURCE_PATH);
+            byte[] bytes = org.springframework.util.StreamUtils.copyToByteArray(resource.getInputStream());
+            tempLogo = java.util.Base64.getEncoder().encodeToString(bytes);
+        } catch (Exception e) {
+            // Logo 是可选的，加载失败不影响核心功能
+        }
+        LOGO_BASE64 = tempLogo;
+    }
+    
+    // --- 缓存 ---
+    private volatile Map<String, Object> cachedMetadata = null;
+    
+    // --- 环境配置 ---
+    /**
+     * 当前运行环境（默认为 prod）
+     * <p>
+     * 开发环境（dev）会禁用缓存，确保接口变更立即生效。
+     * </p>
+     */
+    @org.springframework.beans.factory.annotation.Value("${spring.profiles.active:prod}")
+    private String activeProfile;
+    
+    // --- 依赖注入 ---
     @Autowired
     private RequestMappingHandlerMapping requestMappingHandlerMapping;
 
-    private ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
-    private ObjectMapper objectMapper = new ObjectMapper();
-
-    @Autowired
-    private org.springframework.core.env.Environment environment;
-
+    private final ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    
+    // ===== 以下工具方法已移至 com.sky.core.util.StringUtils =====
+    // getOrDefault(), isNullOrEmpty(), cleanJavaDocDescription(), formatParameterDetail()
+    // 通过静态导入直接使用
+    
     /**
-     * 获取当前服务的基础 URL (http://ip:port/context)
+     * 参数信息封装类
+     * <p>
+     * 用于封装方法参数解析的结果，包括参数名列表、详细参数信息、
+     * 请求体模板和请求类型（JSON/FORM）。
+     * </p>
+     * 
+     * @since 1.0
      */
-    private String getBaseUrl() {
-        String address = environment.getProperty("server.address");
-        if (address == null || address.isEmpty()) {
-            try {
-                address = java.net.InetAddress.getLocalHost().getHostAddress();
-            } catch (Exception e) {
-                address = "localhost";
+    private static class ParameterInfo {
+        /** 参数名称列表，用于 URL 显示 */
+        List<String> paramNames = new ArrayList<>();
+        
+        /** 详细参数信息列表，格式："name|type|location|description" */
+        List<String> detailedParams = new ArrayList<>();
+        
+        /** 请求体 JSON 模板（如果有 @RequestBody） */
+        String bodyTemplate = "";
+        
+        /** 是否为 JSON 请求（true=JSON, false=FORM） */
+        boolean isJson = false;
+    }
+    
+    /**
+     * 解析方法参数信息（提取的核心逻辑）
+     * <p>
+     * 统一处理参数解析，支持以下注解：
+     * <ul>
+     *   <li>@RequestBody - 请求体参数，生成 JSON 模板</li>
+     *   <li>@RequestParam - 查询参数</li>
+     *   <li>@PathVariable - 路径变量</li>
+     *   <li>无注解 - 默认作为查询参数处理</li>
+     * </ul>
+     * </p>
+     * 
+     * <p><b>处理逻辑</b>：
+     * <ol>
+     *   <li>遍历所有方法参数</li>
+     *   <li>提取参数名、类型、JavaDoc 描述</li>
+     *   <li>根据注解类型分类处理</li>
+     *   <li>对复杂类型生成 JSON 模板</li>
+     * </ol>
+     * </p>
+     * 
+     * @param handlerMethod Spring MVC 处理方法对象
+     * @return ParameterInfo 参数信息封装对象
+     * @see ParameterInfo
+     */
+    private ParameterInfo parseMethodParameters(org.springframework.web.method.HandlerMethod handlerMethod) {
+        ParameterInfo info = new ParameterInfo();
+        
+        for (org.springframework.core.MethodParameter param : handlerMethod.getMethodParameters()) {
+            param.initParameterNameDiscovery(parameterNameDiscoverer);
+            String pName = param.getParameterName();
+            String pType = param.getParameterType().getSimpleName();
+            String pDesc = cleanJavaDocDescription(
+                JavaDocReader.getParamDescription(handlerMethod.getBeanType(), handlerMethod.getMethod(), pName),
+                "无描述"
+            );
+
+            if (param.hasParameterAnnotation(org.springframework.web.bind.annotation.RequestBody.class)) {
+                info.isJson = true;
+                Class<?> paramType = param.getParameterType();
+                if (org.springframework.beans.BeanUtils.isSimpleValueType(paramType) || paramType.getName().startsWith("java.lang")) {
+                    info.paramNames.add("BODY:" + pType);
+                    info.detailedParams.add(formatParameterDetail("Body", pType, "Body", "请求体"));
+                } else {
+                    try {
+                        Object template = generateTemplate(paramType, 0);
+                        info.bodyTemplate = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(template);
+                        info.detailedParams.add(formatParameterDetail("Body", pType, "Body", "JSON 结构体"));
+                    } catch (Exception e) {
+                        info.paramNames.add("BODY:ComplexType");
+                    }
+                }
+            } else if (param.hasParameterAnnotation(org.springframework.web.bind.annotation.RequestParam.class)) {
+                org.springframework.web.bind.annotation.RequestParam rp = param.getParameterAnnotation(org.springframework.web.bind.annotation.RequestParam.class);
+                String name = getOrDefault(rp.name(), pName);
+                if (name != null) {
+                    info.paramNames.add(name);
+                    info.detailedParams.add(formatParameterDetail(name, pType, "Query", pDesc));
+                }
+            } else if (param.hasParameterAnnotation(org.springframework.web.bind.annotation.PathVariable.class)) {
+                org.springframework.web.bind.annotation.PathVariable pv = param.getParameterAnnotation(org.springframework.web.bind.annotation.PathVariable.class);
+                String name = getOrDefault(pv.name(), pName);
+                if (name != null) {
+                    info.paramNames.add("PATH:" + name);
+                    info.detailedParams.add(formatParameterDetail(name, pType, "Path", pDesc));
+                }
+            } else {
+                if (org.springframework.beans.BeanUtils.isSimpleValueType(param.getParameterType()) || param.getParameterType().getName().startsWith("java.lang")) {
+                    if (pName != null) {
+                        info.detailedParams.add(formatParameterDetail(pName, pType, "Query", pDesc));
+                    }
+                }
             }
         }
-        String port = environment.getProperty("server.port", "8080");
-        String contextPath = environment.getProperty("server.servlet.context-path", "");
-        return "http://" + address + ":" + port + contextPath;
+        
+        return info;
+    }
+
+    /**
+     * 获取当前服务的基础 URL (支持 Docker/Nginx 反向代理)
+     */
+    private String getBaseUrl(javax.servlet.http.HttpServletRequest request) {
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+        String contextPath = request.getContextPath();
+
+        // Handle standard ports
+        if ((scheme.equals("http") && serverPort == 80) || (scheme.equals("https") && serverPort == 443)) {
+            return String.format("%s://%s%s", scheme, serverName, contextPath);
+        }
+        return String.format("%s://%s:%d%s", scheme, serverName, serverPort, contextPath);
     }
 
 
@@ -74,35 +230,83 @@ public class ApiDashboardController {
 
 
     /**
-     * 渲染仪表盘主页 (SPA Mode)
-     * <p>
-     * 直接读取 resources/templates/dashboard.html 并作为 String 返回。
-     * 避免依赖宿主项目的 ViewResolver 配置。
-     * </p>
+     * 渲染仪表盘主页 (Thymeleaf Mode)
      */
-    @GetMapping(value = "/api-dashboard", produces = "text/html;charset=UTF-8")
-    @ResponseBody
-    public String dashboard() {
-        try {
-            ClassPathResource resource = new ClassPathResource("templates/dashboard.html");
-            return StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "<h1>Error loading dashboard template</h1><pre>" + e.getMessage() + "</pre>";
-        }
+    @GetMapping("/api-dashboard")
+    public String dashboard(javax.servlet.http.HttpServletRequest request, org.springframework.ui.Model model) {
+        model.addAttribute("baseUrl", getBaseUrl(request));
+        return "dashboard"; 
     }
 
     /**
      * 获取仪表盘元数据 (JSON)
      * <p>
      * 前端通过 AJAX 请求此接口来渲染左侧 API 列表。
+     * <b>缓存策略</b>：
+     * <ul>
+     *   <li>开发环境（dev）：禁用缓存，接口变更立即生效</li>
+     *   <li>生产环境（prod）：使用缓存，提升性能</li>
+     * </ul>
      * </p>
+     * 
+     * @param request HTTP请求对象
+     * @return API元数据Map
      */
     @GetMapping("/api-dashboard/meta")
     @ResponseBody
-    public Map<String, Object> dashboardMeta() {
+    public Map<String, Object> dashboardMeta(javax.servlet.http.HttpServletRequest request) {
+        boolean isDevelopment = "dev".equalsIgnoreCase(activeProfile) || 
+                                "development".equalsIgnoreCase(activeProfile);
+        
+        // 开发环境禁用缓存，或缓存为空时重新生成
+        if (isDevelopment || cachedMetadata == null) {
+            Map<String, Object> meta = generateMetadata(request);
+            if (!isDevelopment) {
+                // 仅生产环境缓存
+                cachedMetadata = meta;
+            }
+            return meta;
+        }
+        
+        // 生产环境使用缓存，动态更新 baseUrl（支持不同域名访问）
+        Map<String, Object> result = new HashMap<>(cachedMetadata);
+        result.put("baseUrl", getBaseUrl(request));
+        return result;
+    }
+    
+    /**
+     * 手动刷新元数据缓存
+     * <p>
+     * 用于生产环境手动清除缓存，使新增的接口立即生效。
+     * 开发环境无需调用此接口（已自动禁用缓存）。
+     * </p>
+     * 
+     * <h3>使用场景：</h3>
+     * <ul>
+     *   <li>运行时新增了 Controller 或接口</li>
+     *   <li>接口描述（JavaDoc）发生变化</li>
+     *   <li>需要强制刷新接口列表</li>
+     * </ul>
+     * 
+     * @return 刷新结果信息
+     */
+    @GetMapping("/api-dashboard/refresh-cache")
+    @ResponseBody
+    public Map<String, String> refreshCache() {
+        cachedMetadata = null;
+        Map<String, String> result = new HashMap<>();
+        result.put("status", "success");
+        result.put("message", "缓存已清除");
+        result.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        return result;
+    }
+    
+    /**
+     * 生成 API 元数据（核心逻辑）
+     */
+    private Map<String, Object> generateMetadata(javax.servlet.http.HttpServletRequest request) {
         Map<String, Object> meta = new HashMap<>();
-        meta.put("baseUrl", getBaseUrl());
+        meta.put("baseUrl", getBaseUrl(request));
         
         // Map<ControllerName, List<EndpointConf>>
         Map<String, List<Map<String, String>>> controllerGroups = new TreeMap<>();
@@ -118,39 +322,26 @@ public class ApiDashboardController {
                 continue;
             }
 
-            // Smart Protocol Detection & Param Extraction
-            boolean isJson = false;
-            List<String> paramNames = new ArrayList<>();
-            String bodyTemplate = "";
-            
-            for (MethodParameter param : handlerMethod.getMethodParameters()) {
-                param.initParameterNameDiscovery(parameterNameDiscoverer);
-                if (param.hasParameterAnnotation(RequestBody.class)) {
-                    isJson = true;
-                    Class<?> paramType = param.getParameterType();
-                    // Check if simple type
-                    // Check if simple type
-                    if (BeanUtils.isSimpleValueType(paramType) || paramType.getName().startsWith("java.lang")) {
-                         String typeName = paramType.getSimpleName();
-                         paramNames.add("BODY:" + typeName); 
-                    } else {
-                         // Entity Class - Recursive reflection
-                         try {
-                             Object template = generateTemplate(paramType, 0);
-                             bodyTemplate = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(template);
-                         } catch (Exception e) {
-                             e.printStackTrace();
-                             paramNames.add("BODY:ComplexType");
-                         }
+            // 解析参数信息（提取的方法）
+            ParameterInfo paramInfo = parseMethodParameters(handlerMethod);
+            String paramType = paramInfo.isJson ? "JSON" : "FORM";
+
+            // Return Type Analysis
+            String responseBodyTemplate = "";
+            String returnTypeSimpleName = "void";
+            try {
+                Class<?> returnType = handlerMethod.getReturnType().getParameterType();
+                returnTypeSimpleName = returnType.getSimpleName();
+                if (returnType != void.class && returnType != Void.class) {
+                    Object template = generateTemplate(returnType, 0);
+                    if (template != null) {
+                        responseBodyTemplate = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(template);
                     }
                 }
-                if (param.hasParameterAnnotation(RequestParam.class)) {
-                    RequestParam rp = param.getParameterAnnotation(RequestParam.class);
-                    String name = (rp.name() != null && !rp.name().isEmpty()) ? rp.name() : param.getParameterName();
-                    if (name != null) paramNames.add(name);
-                }
+            } catch (Exception e) {
+                // 返回值解析失败不影响接口列表展示，使用默认值
+                responseBodyTemplate = "{}";
             }
-            String paramType = isJson ? "JSON" : "FORM";
 
             Set<String> patterns = com.sky.core.util.SpringCompatUtils.getActivePatterns(mappingInfo);
 
@@ -159,11 +350,11 @@ public class ApiDashboardController {
 
             for (String pattern : patterns) {
                 // Skip dashboard itself, error endpoints, and internal views
-                if (pattern.equals("/error")) continue;
-                if (pattern.equals("/api-dashboard") || pattern.equals("/api-dashboard/debugger") || pattern.equals("/api-dashboard/meta")) continue;
+                // 过滤仪表盘自身的端点
+                if (DASHBOARD_PATHS.contains(pattern)) continue;
 
                 Map<String, String> endpoint = new HashMap<>();
-                endpoint.put("url", getBaseUrl() + pattern);
+                endpoint.put("url", getBaseUrl(request) + pattern);
                 endpoint.put("path", pattern); // Raw path for filtering
                 endpoint.put("method", methods.isEmpty() ? "ALL" : methods.toString());
                 
@@ -171,13 +362,29 @@ public class ApiDashboardController {
                 String controllerDesc = JavaDocReader.getClassDescription(handlerMethod.getBeanType());
                 // Use Desc if available, otherwise SimpleName
                 String controllerInternalName = controllerSimpleName; 
-                String displayGroupName = (controllerDesc != null && !controllerDesc.isEmpty()) ? controllerDesc : controllerSimpleName;
+                String displayGroupName = getOrDefault(controllerDesc, controllerSimpleName);
 
                 endpoint.put("bean", controllerSimpleName);
                 endpoint.put("function", handlerMethod.getMethod().getName());
                 endpoint.put("paramType", paramType);
-                endpoint.put("params", String.join(",", paramNames));
-                endpoint.put("bodyTemplate", bodyTemplate);
+                endpoint.put("params", String.join(",", paramInfo.paramNames));
+                // Join with special delimiter for easy parsing
+                endpoint.put("requestParamsDetailed", String.join("||", paramInfo.detailedParams));
+                endpoint.put("bodyTemplate", paramInfo.bodyTemplate);
+                endpoint.put("responseBodyTemplate", responseBodyTemplate);
+                endpoint.put("returnType", returnTypeSimpleName);
+                
+                // Analyze Response Fields
+                List<String> validResponseFields = new ArrayList<>();
+                try {
+                    Type returnType = handlerMethod.getReturnType().getGenericParameterType();
+                    if (returnType != void.class && returnType != Void.class) {
+                        analyzeResponseFields(returnType, "", 0, validResponseFields);
+                    }
+                } catch (Exception e) {
+                   // ignore
+                }
+                endpoint.put("responseFieldsDetailed", String.join("||", validResponseFields));
                 
                 // Description Priority: JavaDoc
                 String desc = "";
@@ -197,10 +404,74 @@ public class ApiDashboardController {
         return meta;
     }
 
+    private void analyzeResponseFields(Type type, String prefix, int depth, List<String> fields) {
+         if (depth > MAX_RECURSION_DEPTH) return;
+         
+         Class<?> clazz = null;
+         if (type instanceof Class) {
+             clazz = (Class<?>) type;
+         } else if (type instanceof ParameterizedType) {
+             clazz = (Class<?>) ((ParameterizedType) type).getRawType();
+         }
+         
+         if (clazz == null || BeanUtils.isSimpleValueType(clazz) || clazz.getName().startsWith("java.lang") && !Iterable.class.isAssignableFrom(clazz) && !Map.class.isAssignableFrom(clazz)) return;
+         
+         // Handle Collection/Iterable
+         if (Iterable.class.isAssignableFrom(clazz) || clazz.isArray()) {
+             if (type instanceof ParameterizedType) {
+                 Type genericType = ((ParameterizedType) type).getActualTypeArguments()[0];
+                 analyzeResponseFields(genericType, prefix, depth + 1, fields);
+             } else if (clazz.isArray()) {
+                 analyzeResponseFields(clazz.getComponentType(), prefix, depth + 1, fields);
+             }
+             return;
+         }
+         
+         // Handle Map
+         if (Map.class.isAssignableFrom(clazz)) {
+             if (type instanceof ParameterizedType) {
+                 Type[] typeArgs = ((ParameterizedType) type).getActualTypeArguments();
+                 if (typeArgs.length >= 2) {
+                     // Key is usually string, analyze value
+                     analyzeResponseFields(typeArgs[1], prefix, depth + 1, fields);
+                 }
+             }
+             return;
+         }
+
+         for (Field field : clazz.getDeclaredFields()) {
+             if (Modifier.isStatic(field.getModifiers())) continue;
+             String fName = (prefix.isEmpty() ? "" : prefix + ".") + field.getName();
+             String fType = field.getType().getSimpleName();
+             
+             // If field is generic (e.g. List<String> items), try to get nicer display name
+             if (field.getGenericType() instanceof ParameterizedType) {
+                 fType = field.getGenericType().toString().replaceAll("class |interface ", "").replaceAll("java\\.lang\\.", "").replaceAll("java\\.util\\.", "");
+                 // Simplify full package names for custom classes too if possible, but regex is risky for all. 
+                 // Just keeping it simple for now or stick to simple name if not parameterized.
+             }
+
+             String fDesc = cleanJavaDocDescription(
+                 JavaDocReader.getFieldDescription(clazz, field.getName()),
+                 "-"
+             );
+             
+             fields.add(fName + "|" + fType + "|" + fDesc);
+             
+             // Recursive for complex types
+             if (!BeanUtils.isSimpleValueType(field.getType()) && !field.getType().getName().startsWith("java.lang")) {
+                 analyzeResponseFields(field.getType(), fName, depth + 1, fields);
+             } else if (Collection.class.isAssignableFrom(field.getType()) || Map.class.isAssignableFrom(field.getType())) {
+                 // Also dive into fields that are Collections/Maps
+                 analyzeResponseFields(field.getGenericType(), fName, depth + 1, fields);
+             }
+         }
+    }
+
 
 
     private Object generateTemplate(Type type, int depth) {
-        if (depth > 5) {
+        if (depth > MAX_RECURSION_DEPTH) {
             return "Recursion Limit Reached";
         }
 
@@ -214,8 +485,15 @@ public class ApiDashboardController {
         if (rawClass == null) return null;
 
         if (BeanUtils.isSimpleValueType(rawClass) || rawClass.getName().startsWith("java.lang")) {
-            if (Number.class.isAssignableFrom(rawClass) || rawClass == int.class || rawClass == long.class || rawClass == double.class) return 0;
-            if (rawClass == Boolean.class || rawClass == boolean.class) return false;
+            // 智能默认值：提供合理的示例数据
+            if (rawClass == String.class) return "示例文本";
+            if (rawClass == Integer.class || rawClass == int.class) return 1;
+            if (rawClass == Long.class || rawClass == long.class) return 1L;
+            if (rawClass == Double.class || rawClass == double.class) return 1.0;
+            if (rawClass == Float.class || rawClass == float.class) return 1.0f;
+            if (rawClass == Boolean.class || rawClass == boolean.class) return true;
+            if (rawClass == Byte.class || rawClass == byte.class) return (byte) 1;
+            if (rawClass == Short.class || rawClass == short.class) return (short) 1;
             return "请填写 " + rawClass.getSimpleName();
         }
 
@@ -243,5 +521,175 @@ public class ApiDashboardController {
             map.put(field.getName(), generateTemplate(field.getGenericType(), depth + 1));
         }
         return map;
+    }
+    /**
+     * 导出指定接口的 Markdown 文档
+     */
+    @RequestMapping(value = "/api-dashboard/export-md", method = {RequestMethod.GET, RequestMethod.POST}, produces = "text/markdown;charset=UTF-8")
+    @ResponseBody
+    public String exportMd(@RequestParam String url, 
+                           @RequestParam(required = false) String responseBody,
+                           javax.servlet.http.HttpServletRequest request, 
+                           javax.servlet.http.HttpServletResponse response) {
+        // Set headers to force file download
+        response.setHeader("Content-Disposition", "attachment; filename=\"api-doc.md\"");
+        // Response type is already set by produces, but we can reinforce it
+        response.setContentType("text/markdown; charset=UTF-8");
+
+        String baseUrl = getBaseUrl(request);
+        String matchUrl = url.startsWith("http") ? url : (baseUrl + (url.startsWith("/") ? url : "/" + url));
+        
+        // 使用静态缓存的 Logo（启动时已加载）
+        
+        // Find EP
+        Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMappingHandlerMapping.getHandlerMethods();
+        for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
+            Set<String> patterns = com.sky.core.util.SpringCompatUtils.getActivePatterns(entry.getKey());
+            for (String pattern : patterns) {
+                 String fullUrl = getBaseUrl(request) + pattern;
+                 if (fullUrl.equals(matchUrl) || pattern.equals(url)) {
+                     // Generate MD
+                     Map<String, String> ep = new HashMap<>(); // Re-construct or reuse meta logic?
+                     // Ideally reuse logic. But for now, simple reconstruction or look up in cached meta if possible.
+                     // But meta is request-scoped generated.
+                     
+                     // Quick hack: Generate partial meta for this single EP
+                     HandlerMethod handlerMethod = entry.getValue();
+                     ep.put("function", handlerMethod.getMethod().getName());
+                     ep.put("path", pattern);
+                     ep.put("method", entry.getKey().getMethodsCondition().getMethods().toString());
+                     ep.put("bean", handlerMethod.getBeanType().getSimpleName());
+                     
+                     String desc = "";
+                     String doc = JavaDocReader.getMethodDescription(handlerMethod.getBeanType(), handlerMethod.getMethod());
+                     if (doc != null) desc = doc;
+                     ep.put("description", desc);
+                     
+                      // 解析参数信息（复用提取的方法）
+                      ParameterInfo paramInfo = parseMethodParameters(handlerMethod);
+                      ep.put("requestParamsDetailed", String.join("||", paramInfo.detailedParams));
+                      
+                      // Return Type & Response Fields
+                      Method method = handlerMethod.getMethod();
+                     
+                     // Return Type & Response Fields
+                     Class<?> returnType = method.getReturnType();
+                     ep.put("returnType", returnType.getSimpleName());
+                     try {
+                        if (returnType != void.class && returnType != Void.class) {
+                            Object template = generateTemplate(returnType, 0);
+                            ep.put("responseBodyTemplate", objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(template));
+                            
+                            List<String> respFields = new ArrayList<>();
+                            analyzeResponseFields(returnType, "", 0, respFields);
+                            ep.put("responseFieldsDetailed", String.join("||", respFields));
+                        }
+                     } catch (Exception e) {
+                    // 响应字段解析失败不影响主流程
+                }
+                     
+                     // Add Logo
+                     if (LOGO_BASE64 != null) {
+                         ep.put("logoBase64", LOGO_BASE64);
+                     }
+                     
+                     return generateMarkdown(ep, responseBody);
+                 }
+            }
+        }
+        return "# API Not Found\n\nThe requested API URL could not be found in the current registry.\n\nURL: " + url;
+    }
+
+    private String generateMarkdown(Map<String, String> ep, String responseBody) {
+        StringBuilder sb = new StringBuilder(MARKDOWN_BUILDER_CAPACITY);
+        
+        // 添加 Logo（如果存在）
+        String logo = ep.get("logoBase64");
+        if (logo != null && !logo.isEmpty()) {
+            sb.append("<div align=\"center\">\n");
+            sb.append("  <img src=\"data:image/jpeg;base64,").append(logo)
+              .append("\" width=\"").append(LOGO_WIDTH_PX)
+              .append("\" style=\"border-radius: 50%;\" />\n");
+            sb.append("</div>\n\n");
+        }
+        
+        // 生成标题（优先使用 description，否则使用 function）
+        String description = ep.get("description");
+        String function = ep.get("function");
+        String title = getOrDefault(description, getOrDefault(function, "未命名接口"));
+        sb.append("# ").append(title).append("\n\n");
+        
+        sb.append("## 基本信息 (Basic Info)\n");
+        sb.append("| 项目 (Item) | 内容 (Value) |\n");
+        sb.append("| --- | --- |\n");
+        sb.append("| **接口路径 (Path)** | `").append(getOrDefault(ep.get("path"), "unknown")).append("` |\n");
+        sb.append("| **请求方法 (Method)** | ").append(getOrDefault(ep.get("method"), "ALL")).append(" |\n");
+        sb.append("| **控制器 (Controller)** | ").append(getOrDefault(ep.get("bean"), "unknown")).append(" |\n\n");
+        
+        sb.append("## 请求参数 (Request Parameters)\n");
+        String detailedParams = ep.get("requestParamsDetailed");
+        if (isNullOrEmpty(detailedParams)) {
+            sb.append("*无参数 (No parameters)*\n\n");
+        } else {
+            sb.append("| 参数名 (Name) | 类型 (Type) | 位置 (Location) | 描述 (Description) |\n");
+            sb.append("| --- | --- | --- | --- |\n");
+            // Parsing "Name|Type|Loc|Desc || Name|Type|Loc|Desc"
+            String[] paramsList = detailedParams.split("\\|\\|");
+            for (String pStr : paramsList) {
+                if (pStr.trim().isEmpty()) continue;
+                String[] parts = pStr.split("\\|");
+                if (parts.length >= 4) {
+                     sb.append("| ").append(parts[0]).append(" | `").append(parts[1]).append("` | ").append(parts[2]).append(" | ").append(parts[3]).append(" |\n");
+                } else {
+                     // Fallback mechanism just in case
+                     sb.append("| ").append(pStr).append(" | - | - | - |\n");
+                }
+            }
+            sb.append("\n");
+        }
+        
+        String body = ep.get("bodyTemplate");
+        if (!isNullOrEmpty(body)) {
+            sb.append("## 请求体示例 (Request Body Example)\n");
+            sb.append("```json\n").append(body).append("\n```\n");
+        }
+
+        String returnType = ep.get("returnType");
+        String respFields = ep.get("responseFieldsDetailed");
+        
+        sb.append("## 响应参数 (Response Parameters)\n");
+        
+        if (respFields != null && !respFields.isEmpty()) {
+            sb.append("| 字段名 (Field) | 类型 (Type) | 描述 (Description) |\n");
+            sb.append("| --- | --- | --- |\n");
+             String[] fieldsList = respFields.split("\\|\\|");
+            for (String fStr : fieldsList) {
+                if (fStr.trim().isEmpty()) continue;
+                String[] parts = fStr.split("\\|");
+                if (parts.length >= 3) {
+                     sb.append("| ").append(parts[0]).append(" | `").append(parts[1]).append("` | ").append(parts[2]).append(" |\n");
+                }
+            }
+            sb.append("\n");
+        }
+        
+        String respTemplate = ep.get("responseBodyTemplate");
+        if (respTemplate != null && !respTemplate.isEmpty() && !respTemplate.equals("{}")) {
+             sb.append("### 响应示例 (Example)\n");
+             sb.append("```json\n").append(respTemplate).append("\n```\n");
+        }
+
+        if (!isNullOrEmpty(responseBody)) {
+            sb.append("## 实际响应结果 (Actual Response Result)\n");
+            sb.append("```json\n").append(responseBody).append("\n```\n");
+        }
+        
+        // 添加水印到右下角
+        sb.append("\n---\n\n");
+        sb.append("<div align=\"right\">\n");
+        sb.append("  <sub>由天枢系统为你生成</sub>\n");
+        sb.append("</div>\n");
+        
+        return sb.toString();
     }
 }

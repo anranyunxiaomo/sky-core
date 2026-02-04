@@ -4,10 +4,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Smart Relay 应用程序入口
+ * Sky-Core 应用程序入口
  * <p>
- * 也就是Spring Boot 启动类。
+ * Spring Boot 启动类，自动启用 API Dashboard 功能。
  * </p>
+ * 
+ * @author Sky Team
+ * @since 1.0.0
  */
 @SpringBootApplication
 @com.sky.core.annotation.EnableApiDashboard

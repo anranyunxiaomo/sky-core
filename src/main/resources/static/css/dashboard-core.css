@@ -1,0 +1,1440 @@
+/* =================================================================
+   CSS 变量定义 (CSS Variables)
+   =================================================================
+   集中管理颜色、字体、间距等全局样式变量
+   修改这里可以快速调整整体主题风格
+   ================================================================= */
+
+:root {
+    /* 背景色 (Background Colors) - macOS 深色主题 */
+    --bg-body: #000000;
+
+    /* 毛玻璃效果变量 (Glassmorphism Variables) */
+    --glass-bg: rgba(20, 20, 25, 0.7);
+    /* 毛玻璃背景色 */
+    --glass-border: rgba(255, 255, 255, 0.1);
+    /* 毛玻璃边框色 */
+    --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    /* 毛玻璃阴影 */
+    --glass-blur: blur(24px);
+    /* 毛玻璃模糊度 */
+
+    /* 文字颜色 (Text Colors) */
+    --text-primary: #ffffff;
+    /* 主要文字颜色 */
+    --text-secondary: #aaaaaa;
+    /* 次要文字颜色 */
+
+    /* 强调色 (Accent Colors) */
+    --accent-blue: #0071e3;
+    /* 蓝色 - 主要操作 */
+    --accent-red: #ff3b30;
+    /* 红色 - DELETE方法 */
+    --accent-green: #34c759;
+    /* 绿色 - POST方法 */
+    --accent-orange: #ff9500;
+    /* 橙色 - PUT方法 */
+
+    /* 边框颜色 (Border Colors) */
+    --border-light: rgba(255, 255, 255, 0.1);
+
+    /* 字体族 (Typography) */
+    --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+}
+
+
+/* =================================================================
+   基础样式 (Base Styles)
+   =================================================================
+   页面基础设置和容器布局
+   ================================================================= */
+
+/* 平滑滚动 */
+html {
+    scroll-behavior: smooth;
+}
+
+/* 主容器 - 最大宽度1080px，居中显示 */
+.container {
+    max-width: 1080px;
+    margin: 0 auto;
+}
+
+/* =================================================================
+   页头样式 (Header Styles)
+   =================================================================
+   顶部标题和副标题的样式
+   修改字体大小：h1 (主标题), p.subtitle (副标题)
+   ================================================================= */
+
+header {
+    text-align: center;
+    margin-bottom: 70px;
+    position: relative;
+}
+
+/* 主标题 - "API 仪表盘" */
+h1 {
+    font-size: 56px;
+    /* 标题大小，可调整 */
+    font-weight: 700;
+    margin: 0 0 16px 0;
+    letter-spacing: -0.02em;
+    color: #fff;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 副标题 - "极简 · 高效 · 智能" */
+p.subtitle {
+    font-size: 20px;
+    /* 副标题大小，可调整 */
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+    margin: 0;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* =================================================================
+   毛玻璃搜索栏 (Glass Search Bar)
+   =================================================================
+   顶部导航栏 - 包含搜索框、调试按钮、设置按钮
+   修改：.glass-bar (整体), .glass-input (搜索框), .glass-btn (按钮)
+   ================================================================= */
+
+/* 毛玻璃容器 - Dock 风格 */
+.glass-bar {
+    margin-top: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.glass-bar:hover {
+    transform: scale(1.02);
+}
+
+.glass-input {
+    border: none;
+    background: transparent;
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    width: 300px;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.glass-input::placeholder {
+    color: #999;
+}
+
+.glass-btn {
+    background: #fff;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 16px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.glass-btn:hover {
+    background: var(--accent-blue);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 113, 227, 0.3);
+}
+
+/* =================================================================
+   控制器区域 (Controller Sections)
+   =================================================================
+   每个控制器的标题和整体布局
+   修改 .controller-title 可调整 "演示控制器" 等标题样式
+   ================================================================= */
+
+/* 控制器整体容器 */
+.controller-section {
+    margin-bottom: 60px;
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* 控制器标题 - "演示控制器", "订单控制器" 等 */
+.controller-title {
+    font-size: 20px;
+    /* 控制器名称字体大小，可调整 */
+    font-weight: 700;
+    margin-bottom: 24px;
+    padding-left: 2px;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    letter-spacing: -0.01em;
+    border-left: none;
+}
+
+/* =================================================================
+   API 列表卡片 (API Cards)
+   =================================================================
+   显示 API 接口列表的毛玻璃卡片容器
+   修改：.api-list (容器), .api-item (单个 API), .api-info (信息)
+   ================================================================= */
+
+/* 毛玻璃卡片容器 */
+.api-list {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(40px) saturate(150%);
+    -webkit-backdrop-filter: blur(40px) saturate(150%);
+    border-radius: 28px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+    /* Softer shadow */
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.api-item {
+    display: flex;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    transition: background 0.2s;
+}
+
+.api-item:last-child {
+    border-bottom: none;
+}
+
+.api-item:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* =================================================================
+   HTTP 方法徽章 (Method Badges)
+   =================================================================
+   GET/POST/PUT/DELETE 等 HTTP 方法的颜色徽章
+   修改：.GET, .POST, .PUT, .DELETE, .ALL
+   ================================================================= */
+
+/* 徽章基础样式 */
+.method-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    /* Full Pill */
+    width: 60px;
+    text-align: center;
+    margin-right: 24px;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+}
+
+/* GET 方法 - 蓝色 */
+.GET {
+    background: rgba(0, 113, 227, 0.1);
+    color: var(--accent-blue);
+}
+
+/* POST 方法 - 绿色 */
+.POST {
+    background: rgba(52, 199, 89, 0.1);
+    color: var(--accent-green);
+}
+
+/* PUT 方法 - 橙色 */
+.PUT {
+    background: rgba(255, 149, 0, 0.1);
+    color: var(--accent-orange);
+}
+
+/* DELETE 方法 - 红色 */
+.DELETE {
+    background: rgba(255, 59, 48, 0.1);
+    color: var(--accent-red);
+}
+
+/* ALL 方法 - 灰色 */
+.ALL {
+    background: rgba(142, 142, 147, 0.1);
+    color: var(--text-secondary);
+}
+
+/* API Info */
+.api-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    /* Enable flex child truncation */
+}
+
+.api-path {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 500px;
+}
+
+.api-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+/* API Actions Container */
+.api-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: 20px;
+    align-items: center;
+}
+
+/* =================================================================
+   按钮样式 (Button Styles)
+   =================================================================
+   各种按钮的样式定义
+   - .btn-test: 测试按钮
+   - .btn-primary: 主按钮（蓝色）
+   - .btn-cancel: 取消按钮
+   - .btn-icon: 图标按钮
+   - .btn-add: 添加按钮
+   - .btn-utility: 工具按钮
+   ================================================================= */
+
+/* 测试按钮 - "测试" "高级" */
+.btn-test {
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--text-primary);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 18px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+    white-space: nowrap;
+    /* ✨ FIX: Ensure button text never wraps */
+}
+
+.btn-test:hover {
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: scale(1.02);
+}
+
+/* =================================================================
+   模态框 (Modals)
+   =================================================================
+   弹窗模态框的样式，包括设置、测试、高级调试等
+   修改：.overlay (蒙层), .modal (模态框容器)
+   ================================================================= */
+
+/* 背景蒙层 - 点击关闭 */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    /* Lighter overlay for glass feel */
+    backdrop-filter: blur(15px);
+    z-index: 100;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    width: 720px;
+    max-width: 90%;
+    background: var(--glass-bg);
+    backdrop-filter: blur(50px) saturate(180%);
+    -webkit-backdrop-filter: blur(50px) saturate(180%);
+    border-radius: 32px;
+    padding: 40px;
+    box-shadow: 0 40px 100px rgba(0, 0, 0, 0.2);
+    z-index: 101;
+    display: none;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    /* Apple Ease */
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.modal.active {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.overlay.active {
+    opacity: 1;
+}
+
+.modal h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+/* =================================================================
+   表单元素 (Form Elements)
+   =================================================================
+   输入框、下拉框、文本域等表单组件
+   修改：.form-label (标签), .form-input (输入框), textarea (文本域)
+   ================================================================= */
+
+/* 表单标签 */
+.form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.form-input {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    font-size: 15px;
+    outline: none;
+    transition: all 0.2s;
+    box-sizing: border-box;
+    color: #ffffff;
+}
+
+.form-input:focus {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.2);
+    color: #ffffff;
+}
+
+/* =================================================================
+   分段控制器 (Segmented Control)
+   =================================================================
+   iOS 风格的分段切换控件，用于 Body Type 切换等
+   修改：.segmented-control (容器), .segment (分段)
+   ================================================================= */
+
+/* 分段控制器容器 */
+.segmented-control {
+    display: flex;
+    background: rgba(118, 118, 128, 0.12);
+    padding: 3px;
+    border-radius: 12px;
+    /* iOS Segment default */
+}
+
+.segment {
+    flex: 1;
+    text-align: center;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    border-radius: 9px;
+    transition: all 0.2s ease;
+}
+
+.segment:hover {
+    opacity: 0.7;
+}
+
+.segment.selected,
+.segment.active {
+    background: #FFFFFF;
+    font-weight: 600;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* =================================================================
+   JSON 编辑器 (JSON Editor)
+   =================================================================
+   用于编辑 Request Body 的文本域
+   修改：textarea (文本域背景、颜色等)
+   ================================================================= */
+
+/* 文本域 - 深色 IDE 主题 */
+textarea {
+    width: 100%;
+    border-radius: 18px;
+    background: #1e1e1e;
+    /* Dark IDE Theme */
+    color: #d4d4d4;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    resize: vertical;
+    box-sizing: border-box;
+    line-height: 1.5;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+    outline: none;
+}
+
+textarea:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Buttons */
+.btn-primary {
+    background: var(--accent-blue);
+    color: white;
+    padding: 12px 32px;
+    border-radius: 20px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 113, 227, 0.3);
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(0, 113, 227, 0.4);
+    filter: brightness(1.1);
+}
+
+.btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+    padding: 12px 24px;
+    border: none;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-cancel:hover {
+    color: var(--text-primary);
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #999;
+    transition: all 0.2s;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-icon:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+.btn-add {
+    background: var(--text-primary);
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.btn-add:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.btn-utility {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-utility:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+.btn-utility:active {
+    transform: translateY(0);
+}
+
+/* Response Area */
+.response-box {
+    margin-top: 24px;
+    padding: 24px;
+    background: #fff;
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    white-space: pre-wrap;
+    display: none;
+    max-height: 450px;
+    overflow-y: auto;
+    color: #333;
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+/* --- Advanced Console Modal Styles --- */
+.console-layout {
+    display: flex;
+    gap: 24px;
+    height: 650px;
+}
+
+.c-col-left,
+.c-col-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+.c-col-right {
+    background: rgba(245, 245, 247, 0.8);
+    /* Off-white */
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.console-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    margin-bottom: 16px;
+}
+
+.c-tab {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.c-tab.active {
+    color: var(--accent-blue);
+    border-bottom-color: var(--accent-blue);
+}
+
+/* Status Bar */
+.c-status-bar,
+#t-status-bar {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    margin-bottom: 12px;
+    align-items: center;
+}
+
+/* Badges */
+.c-badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+
+.c-badge-success {
+    background: rgba(52, 199, 89, 0.15);
+    color: #166534;
+}
+
+.c-badge-error {
+    background: rgba(255, 59, 48, 0.15);
+    color: #991b1b;
+}
+
+.modal-large {
+    width: 960px !important;
+    max-width: 95vw;
+}
+
+/* =================================================================
+   动画效果 (Animations)
+   =================================================================
+   页面动画效果定义
+   ================================================================= */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =================================================================
+   深色主题覆盖 (Dark Mode Overrides)
+   =================================================================
+   星空背景深色主题的颜色覆盖
+   修改这里可调整整体颜色方案
+   ================================================================= */
+
+:root {
+    --text-primary: #ffffff !important;
+    --text-secondary: #dddddd !important;
+    --bg-body: #0b0b15 !important;
+    --accent-blue: #2997ff !important;
+    /* Brighter Blue */
+    --glass-bg: rgba(20, 20, 30, 0.65) !important;
+    /* More transparent to see stars */
+}
+
+body {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffffff' d='M12,0L14.5,9.5L24,12L14.5,14.5L12,24L9.5,14.5L0,12L9.5,9.5L12,0Z' style='filter:drop-shadow(0 0 4px rgba(255,255,255,0.8));'/%3E%3C/svg%3E") 12 12, auto;
+    color: var(--text-primary);
+    background-color: var(--bg-body);
+    background-image: radial-gradient(circle at 50% 0%, rgba(30, 60, 100, 0.3), transparent 60%), url('/images/macos-bg.png');
+    background-attachment: fixed;
+    background-size: cover;
+    overflow-x: hidden;
+    /* Prevent horizontal scroll from absolute stars */
+}
+
+/* Ambient Space Glow (Intensified) */
+.planet-glow {
+    position: absolute;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1000px;
+    height: 800px;
+    background: radial-gradient(circle at 50% 50%, rgba(41, 151, 255, 0.4), transparent 70%);
+    filter: blur(80px);
+    z-index: -1;
+    pointer-events: none;
+    animation: pulseGlow 8s infinite alternate;
+}
+
+@keyframes pulseGlow {
+    0% {
+        opacity: 0.6;
+        transform: translateX(-50%) scale(1);
+    }
+
+    100% {
+        opacity: 0.95;
+        transform: translateX(-50%) scale(1.1);
+    }
+}
+
+/* Static Stars */
+.star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    z-index: -1;
+    animation: twinkle var(--duration, 3s) infinite ease-in-out;
+    opacity: var(--opacity, 0.8);
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+    /* Glow for larger stars */
+}
+
+.constellation-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -2;
+    /* Behind stars */
+}
+
+.constellation-line {
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 1px;
+    stroke-linecap: round;
+}
+
+@keyframes twinkle {
+
+    0%,
+    100% {
+        opacity: var(--opacity, 0.8);
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.2;
+        transform: scale(0.5);
+    }
+}
+
+/* Force specific elements to use the new variables if they were hardcoded */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+a,
+button,
+input,
+textarea,
+select,
+label {
+    color: inherit;
+    /* Allow cascading from body/parent */
+}
+
+/* Start of component specific overrides */
+h1 {
+    color: #ffffff !important;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.6), 0 0 10px rgba(0, 191, 255, 0.8);
+}
+
+.controller-title {
+    color: #ffffff !important;
+    border-left: 4px solid #00BFFF !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Meteor */
+.meteor-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: linear-gradient(135deg, #ffffff, #87CEFA);
+    border-radius: 50%;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    z-index: 9999;
+    animation: meteorFade 0.8s ease-out forwards;
+    box-shadow: 0 0 6px rgba(135, 206, 250, 0.8);
+}
+
+@keyframes meteorFade {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.1) translate(-20px, 20px);
+    }
+}
+
+/* Modal & Glass - More Transparent to show stars */
+.glass-bar,
+.api-list,
+.modal,
+.c-col-right,
+#sidebar {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(20px) !important;
+    /* Strong blur */
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+    color: #ffffff !important;
+}
+
+.api-item:hover,
+.glass-btn:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+
+/* --- User Styles Override --- */
+textarea {
+    background: rgba(0, 0, 0, 0.5) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.form-input::placeholder,
+.glass-input::placeholder {
+    color: #aaaaaa !important;
+}
+
+/* Test Button Fix */
+.btn-test {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.btn-test:hover {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Text Visibility Helpers */
+.form-label,
+.c-tab,
+.api-path,
+.api-desc {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.api-desc {
+    color: #dddddd !important;
+}
+
+/* Segment Control Text */
+.segment {
+    color: #dddddd !important;
+}
+
+.segment.active {
+    color: #000000 !important;
+    background: #ffffff !important;
+}
+
+/* Add Button - Force visibility */
+.btn-add {
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important;
+    border: none !important;
+}
+
+.btn-add:hover {
+    background-color: #f0f0f0 !important;
+    transform: translateY(-1px);
+}
+
+/* Glass Button (Header) - Force Black Text on White BG */
+.glass-btn {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+}
+
+.glass-btn:hover {
+    background: #e0e0e0 !important;
+    transform: scale(1.05);
+}
+
+/* Code Box */
+.response-box,
+#c-res-body {
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: #00ffca !important;
+    border: 1px solid #444 !important;
+    font-family: 'SF Mono', monospace !important;
+    padding: 15px;
+    border-radius: 8px;
+    position: relative;
+}
+
+/* Custom Scrollbar (Webkit) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Copy Button */
+.btn-copy {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-copy:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+/* --- Mobile Responsive --- */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 12px;
+    }
+
+    h1 {
+        font-size: 32px;
+    }
+
+    .glass-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        width: 90%;
+    }
+
+    .console-layout {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .c-col-left,
+    .c-col-right {
+        height: 400px;
+        flex: none;
+        width: 100%;
+    }
+
+    .modal-large {
+        width: 95vw;
+    }
+
+    .api-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .api-info {
+        width: 100%;
+    }
+
+    .method-badge {
+        margin-bottom: 4px;
+    }
+}
+
+/* --- Syntax Highlighting --- */
+.string {
+    color: #a5d6ff;
+}
+
+.number {
+    color: #79c0ff;
+}
+
+.boolean {
+    color: #ff7b72;
+}
+
+.null {
+    color: #ff7b72;
+}
+
+.key {
+    color: #7ee787;
+}
+
+/* Sidebar Item */
+.sidebar-item {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 10px 14px;
+    border-radius: 12px;
+    transition: all 0.2s;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.sidebar-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.sidebar-item.active {
+    background: rgba(0, 113, 227, 0.1);
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+/* Input & Textarea Overrides - Original Simple White */
+.form-input,
+.glass-input,
+textarea,
+select {
+    background: rgba(0, 0, 0, 0.35) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    transition: all 0.3s ease;
+}
+
+.form-input:focus,
+.glass-input:focus,
+textarea:focus,
+select:focus {
+    background: rgba(0, 0, 0, 0.55) !important;
+    border-color: var(--accent-blue) !important;
+    outline: none !important;
+    box-shadow: 0 0 15px rgba(0, 113, 227, 0.3) !important;
+    color: #ffffff !important;
+}
+
+.form-input::placeholder,
+.glass-input::placeholder,
+textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+    text-shadow: none !important;
+}
+
+/* Test Button Fix */
+.btn-test {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.btn-test:hover {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Text Visibility Helpers */
+.form-label,
+.c-tab,
+.api-path,
+.api-desc {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.api-desc {
+    color: #dddddd !important;
+}
+
+/* Segment Control Text */
+.segment {
+    color: #dddddd !important;
+}
+
+.segment.active {
+    color: #000000 !important;
+    /* Active segment needs dark text if background is white */
+    background: #ffffff !important;
+}
+
+/* Add Button - Force visibility */
+.btn-add {
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5) !important;
+    border: none !important;
+}
+
+.btn-add:hover {
+    background-color: #f0f0f0 !important;
+    transform: translateY(-1px);
+}
+
+/* Glass Button (Header) - Force Black Text on White BG */
+.glass-btn {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+}
+
+.glass-btn:hover {
+    background: #e0e0e0 !important;
+    transform: scale(1.05);
+}
+
+/* Code Box */
+.response-box,
+#c-res-body {
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: #00ffca !important;
+    border: 1px solid #444 !important;
+    font-family: 'SF Mono', monospace !important;
+    padding: 15px;
+    border-radius: 8px;
+    position: relative;
+    /* For copy button context if needed */
+}
+
+/* Custom Scrollbar (Webkit) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Copy Button */
+.btn-copy {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    /* Match btn-utility */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    padding: 6px;
+    /* Icon only typically */
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-copy:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: var(--text-primary);
+    transform: scale(1.05);
+}
+
+/* --- Mobile Responsive --- */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 12px;
+    }
+
+    h1 {
+        font-size: 32px;
+    }
+
+    .glass-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        width: 90%;
+    }
+
+    .console-layout {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .c-col-left,
+    .c-col-right {
+        height: 400px;
+        flex: none;
+        width: 100%;
+    }
+
+    .modal-large {
+        width: 95vw;
+    }
+
+    .api-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .api-info {
+        width: 100%;
+    }
+
+    .method-badge {
+        margin-bottom: 4px;
+    }
+}
+
+/* --- Syntax Highlighting --- */
+.string {
+    color: #a5d6ff;
+}
+
+.number {
+    color: #79c0ff;
+}
+
+.boolean {
+    color: #ff7b72;
+}
+
+.null {
+    color: #ff7b72;
+}
+
+.key {
+    color: #7ee787;
+}
+
+/* Sidebar Item */
+.sidebar-item {
+    font-size: 13px;
+    color: var(--text-secondary);
+    padding: 10px 14px;
+    border-radius: 12px;
+    transition: all 0.2s;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.sidebar-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.sidebar-item.active {
+    background: rgba(0, 113, 227, 0.1);
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+/* ========== 用户体验增强功能样式 ========== */
+
+/* 3️⃣ JSON 语法高亮样式 */
+.json-key {
+    color: #a78bfa;
+    font-weight: 500;
+}
+
+.json-string {
+    color: #34c759;
+}
+
+.json-number {
+    color: #fbbf24;
+}
+
+.json-boolean {
+    color: #0071e3;
+}
+
+.json-null {
+    color: #ff3b30;
+    font-style: italic;
+}
+
+/* =================================================================
+   Sidebar Content Shift Logic
+   ================================================================= */
+/* Global Box Sizing Reset */
+* {
+    box-sizing: border-box;
+}
+
+/* =================================================================
+   Sidebar Content Shift Logic (Fluid Layout)
+   ================================================================= */
+.container {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    /* Ensure z-index works if needed */
+}
+
+/* 
+   When sidebar is open:
+   1. Abandon "Centered" layout (margin: 0 auto)
+   2. Become "Fluid" layout (max-width: none)
+   3. Sit next to sidebar (margin-left: 260px + 20px gap = 280px)
+*/
+.container.padded-force {
+    max-width: none !important;
+    margin-left: 280px !important;
+    margin-right: 40px !important;
+    padding-left: 0 !important;
+    width: auto !important;
+}
+
+/* Remove old selector if present */
+#main-content {
+    display: flex;
+    gap: 30px;
+}
