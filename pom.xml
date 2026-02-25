@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>io.github.anranyunxiaomo</groupId>
 	<artifactId>sky-core</artifactId>
-	<version>0.0.2</version>
+	<version>1.0.0</version>
 	<name>sky-core</name>
 	<description>Sky Core Framework for Spring Boot</description>
 	<url>https://github.com/anranyunxiaomo/sky-core</url>
