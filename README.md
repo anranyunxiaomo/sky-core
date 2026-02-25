@@ -20,7 +20,7 @@
 
 **天枢 (Sky Core)**，取自北斗七星之首，意为众星之枢纽。
 
-在古代星象学中，天枢星指引方向；在现代软件架构中，**Sky Core** 则是您 API 治理的罗盘。
+In ancient astronomy, the Tian Shu star guided directions; in modern software architecture, **Sky Core** is your compass for API governance.
 作为 Spring Boot 应用的 **API 指挥中枢**，它以极简主义为核心设计理念，为您提供**零配置**、**高颜值**的接口调试体验。
 
 面对日益复杂的接口调试需求，传统的 Swagger/OpenAPI 往往让代码充斥着臃肿的注解，喧宾夺主。天枢回归代码本质——**注释即文档**。它深入解析源码层面的 JavaDoc，将其转化为优雅的交互界面，让开发者从文档维护的泥潭中解脱，专注于业务逻辑的星辰大海。
@@ -31,10 +31,13 @@
 
 - **🍎 极致 UI 设计**: 采用毛玻璃 (Glassmorphism) 与卡片式布局，赏心悦目。
 - **📝 零侵入文档**: 无需 `@ApiOperation` 等任何注解，**直接读取 Java 注释**。
+- **🧬 TS 接口生成**: 支持一键生成 TypeScript 类型定义。
+- **🎭 Mock 数据模拟**: 支持基于接口原型生成模拟数据。
 - **⚡️ 智能调试**: 自动解析参数结构，一键生成 JSON 模板，支持复杂对象递归。
-- **� 文档导出**: 支持将 API 接口一键导出为 **Markdown** 格式，方便沉淀与分享。
+- ** 文档导出**: 支持将 API 接口一键导出为 **Markdown** 格式。
 - **🕒 历史回溯**: 自动保存调试请求历史，随时一键恢复现场。
-- **�🔌 即插即用**: 引入依赖 -> 加注解 -> 启动，三步完成配置。
+- **🔌 即插即用**: 引入依赖 -> 加注解 -> 启动，三步完成配置。
+- **🌐 环境适配**: 完美支持 Context Path，确保在 Nginx 反代等架构下资源正常加载。
 
 ---
 
@@ -107,9 +110,9 @@ public class MyApplication {
 
 ---
 
-## � 编写文档 | Writing Docs
+##  编写文档 | Writing Docs
 
-**忘记那些繁琐的注解吧！** Sky Core 能够理解您的代码和注释。
+**忘记那些繁琐的注解吧！** Sky Core 能够理解您的代码 and 注释。
 
 ```java
 /**
