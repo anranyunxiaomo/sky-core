@@ -33,7 +33,7 @@ public class JavaDocReader {
         if (lines == null || lines.isEmpty()) return null;
 
         String methodName = method.getName();
-        // Simple regex to match method declaration
+        // 简单的正则匹配方法声明
         String methodPattern = ".*\\s+" + methodName + "\\s*\\(.*";
 
         for (int i = 0; i < lines.size(); i++) {
@@ -57,7 +57,7 @@ public class JavaDocReader {
             if (line.matches(methodPattern) && !line.trim().startsWith("//") && !line.trim().startsWith("*")) {
                 String fullComment = extractCommentBlock(lines, i, true);
                 if (fullComment == null) return null;
-                // Parse @param paramName description
+                // 解析 @param paramName 描述
                 // ✅ 使用预编译的正则表达式
                 java.util.regex.Matcher m = PARAM_PATTERN.matcher(fullComment);
                 if (m.find()) {
@@ -72,13 +72,13 @@ public class JavaDocReader {
         List<String> lines = readSourceLines(clazz);
         if (lines == null || lines.isEmpty()) return null;
 
-        // Pattern: Type fieldName = or Type fieldName;
-        // Simplified check: whitespace + fieldName + whitespace/semicolon/=
+        // 模式: Type fieldName = 或 Type fieldName;
+        // 简化检查: 空白 + fieldName + 空白/分号/=
         String fieldPattern = ".*\\s+" + fieldName + "\\s*[=;].*";
 
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
-            // Ensure it's a field declaration (rudimentary check)
+            // 确保这是一个字段声明（基本检查）
             if (line.matches(fieldPattern) && !line.trim().startsWith("//") && !line.trim().startsWith("*") && !line.trim().startsWith("return")) {
                 return extractCommentBlock(lines, i, false);
             }
@@ -120,17 +120,17 @@ public class JavaDocReader {
 
         List<String> lines = null;
 
-        // 1. Try Local File System (Dev Mode)
+        // 1. 尝试本地文件系统 (Dev 模式)
         File sourceFile = new File(SRC_FOLDER + File.separator + relativePath);
         if (sourceFile.exists()) {
             try {
                 lines = Files.readAllLines(sourceFile.toPath(), StandardCharsets.UTF_8);
             } catch (IOException e) {
-                // Ignore, try classpath
+                // 忽略，尝试 classpath
             }
         }
 
-        // 2. Try Classpath Resource (Prod Mode - Requires source packaging)
+        // 2. 尝试 Classpath 资源 (Prod 模式 - 需要打包源码)
         if (lines == null) {
             try (InputStream is = clazz.getResourceAsStream("/" + relativePath)) {
                 if (is != null) {
@@ -161,7 +161,7 @@ public class JavaDocReader {
                     String cLine = lines.get(j).trim();
                     boolean isStart = cLine.startsWith("/**");
                     String clean = cLine.replaceAll("^/\\*+|\\*+/$|\\*", "").trim();
-                    // Strip HTML tags (e.g. <p>, <b>) for clean UI
+                    // 去除 HTML 标签 (例如 <p>, <b>) 获得纯净 UI
                     clean = clean.replaceAll("<[^>]+>", ""); 
                     
                     if (!includeTags && clean.startsWith("@")) {

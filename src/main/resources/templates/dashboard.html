@@ -3,12 +3,13 @@
 
 <head>
     <title>API 仪表盘</title>
-    <link rel="icon" href="images/sky-logo.png">
+    <!-- 使用 Thymeleaf 处理图片路径，确保适配 Context Path -->
+    <link rel="icon" th:href="@{/images/sky-logo.png}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- 外部CSS文件 - 提升缓存性能和可维护性 -->
-    <link rel="stylesheet" th:href="@{/css/dashboard-core.css?v=1}">
+    <link rel="stylesheet" th:href="@{/css/dashboard-core.css?v=3}">
 
     <!-- 星空背景Canvas元素 - 装饰性动画效果 -->
     <canvas id="star-canvas" aria-label="装饰性星空背景动画"
@@ -19,6 +20,12 @@
 
     <!-- 键盘导航增强脚本 - 提升无障碍访问体验 -->
     <script th:src="@{/js/keyboard-navigation.js}" defer></script>
+
+    <!-- 注入上下文路径供 JS 使用 -->
+    <script th:inline="javascript">
+        /* 获取应用上下文路径，兼容 Nginx 反代 */
+        const CTX = /*[[@{/}]]*/ '';
+    </script>
 </head>
 
 <body>
@@ -27,7 +34,7 @@
         <header>
             <div class="planet-glow"></div>
             <div style="display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 5px;">
-                <img src="images/sky-logo.png"
+                <img th:src="@{/images/sky-logo.png}"
                     style="height: 56px; border-radius: 50%; box-shadow: 0 0 20px rgba(0, 113, 227, 0.5); border: 2px solid rgba(255, 255, 255, 0.1);">
                 <h1 style="margin:0;">API 仪表盘</h1>
             </div>
@@ -118,10 +125,21 @@
     <div id="modal" class="modal">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
             <div style="display:flex; align-items:center; gap:10px;">
-                <img src="images/sky-logo.png" style="height: 28px; border-radius: 50%;">
+                <img th:src="@{/images/sky-logo.png}" style="height: 28px; border-radius: 50%;">
                 <h3 style="margin:0; font-size: 20px;">接口测试</h3>
             </div>
-            <div id="loader" class="spinner"></div>
+            <!-- 工具栏: TS & Mock -->
+            <div style="display:flex; gap:8px;">
+                <button class="btn-secondary" onclick="generateCurrentTS()" title="生成 TypeScript 接口"
+                    style="padding:4px 8px; font-size:12px;">
+                    🧬 TS
+                </button>
+                <button class="btn-secondary" onclick="mockCurrentData()" title="生成 Mock 数据"
+                    style="padding:4px 8px; font-size:12px; color:#e2b340;">
+                    🎭 Mock
+                </button>
+                <div id="loader" class="spinner"></div>
+            </div>
         </div>
 
         <div class="form-group">
@@ -217,7 +235,7 @@
         <div class="modal modal-large">
             <div class="modal-header">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <img src="images/sky-logo.png" style="height: 28px; border-radius: 50%;">
+                    <img th:src="@{/images/sky-logo.png}" style="height: 28px; border-radius: 50%;">
                     <h3>🛠️ 高级调试台 (Console)</h3>
                 </div>
                 <!-- 1️⃣ 历史记录按钮 -->
@@ -244,9 +262,9 @@
             </div>
 
             <div class="console-layout">
-                <!-- Left: Request -->
+                <!-- 左侧：请求配置区 -->
                 <div class="c-col-left">
-                    <!-- URL Bar -->
+                    <!-- URL 地址栏 -->
                     <div style="display: flex; gap: 10px;">
                         <select id="c-method" class="form-input"
                             style="width: 100px; text-align:center; font-weight:bold;" onchange="updateConsoleUI()">
@@ -271,9 +289,9 @@
                         <div class="c-tab" onclick="switchConsoleTab(this, 'c-tab-headers')">Headers</div>
                     </div>
 
-                    <!-- Tab Content -->
+                    <!-- Tab 内容区 -->
                     <div id="c-tab-body" class="c-tab-content">
-                        <!-- Body Type Toggle (Postman Style) -->
+                        <!-- Body 类型切换 (类 Postman 风格) -->
                         <div id="c-body-controls"
                             style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <span style="font-size:12px; color:#aaa;">Request Body</span>

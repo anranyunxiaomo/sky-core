@@ -36,6 +36,10 @@ const JSON_HIGHLIGHT_REGEX = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(tr
     let width, height;
     let particles = [];
 
+    /**
+     * 调整画布大小以适应窗口
+     * 当窗口大小改变时自动调用
+     */
     function resize() {
         width = canvas.width = window.innerWidth;
         height = canvas.height = window.innerHeight;
@@ -43,22 +47,38 @@ const JSON_HIGHLIGHT_REGEX = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(tr
     window.addEventListener('resize', resize);
     resize();
 
+    /**
+     * 粒子类 - 星空动画的基本单元
+     * 每个粒子有位置、速度和大小属性
+     */
     class Particle {
+        /**
+         * 构造函数 - 随机初始化粒子属性
+         */
         constructor() {
-            this.x = Math.random() * width;
-            this.y = Math.random() * height;
-            this.vx = (Math.random() - 0.5) * 0.5;
-            this.vy = (Math.random() - 0.5) * 0.5;
-            this.size = Math.random() * 2 + 1;
+            this.x = Math.random() * width;  // 随机X坐标
+            this.y = Math.random() * height; // 随机Y坐标
+            this.vx = (Math.random() - 0.5) * 0.5; // X方向速度
+            this.vy = (Math.random() - 0.5) * 0.5; // Y方向速度
+            this.size = Math.random() * 2 + 1;     // 粒子大小
         }
+        /**
+         * 更新粒子位置
+         * 边界碰撞时反向移动
+         */
         update() {
             this.x += this.vx;
             this.y += this.vy;
+            // 边界检测：碰到边缘则反向
             if (this.x < 0 || this.x > width) this.vx *= -1;
             if (this.y < 0 || this.y > height) this.vy *= -1;
         }
+        /**
+         * 绘制粒子到画布
+         * 使用白色半透明圆形表示星星
+         */
         draw() {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
             ctx.fill();
@@ -70,7 +90,7 @@ const JSON_HIGHLIGHT_REGEX = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(tr
     function animate() {
         ctx.clearRect(0, 0, width, height);
 
-        // Draw Particles & Connections
+        // 绘制粒子和连接线
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
             p.update();
@@ -108,15 +128,28 @@ const JSON_HIGHLIGHT_REGEX = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(tr
  * 3. UI 交互逻辑 (弹窗、折叠、参数处理)
  */
 class ApiClient {
+    /**
+     * 解析完整 URL
+     * 自动处理路径拼接和协议头补全
+     * @param {string} base 基础 URL (e.g. http://localhost:8080)
+     * @param {string} path 相对路径 (e.g. /api/user)
+     */
     static resolveUrl(base, path) {
         let b = (base || '').trim();
         let p = (path || '').trim();
         if (!p) return b;
 
-        // Handle cases where p is already a full URL (including /http://host/path)
+        // 1. 处理 p 已经是完整 URL 的情况
         if (p.startsWith('http')) return p;
         if (p.startsWith('/http')) return p.slice(1);
 
+        // 2. 自动补全 Base URL 协议头 (修复用户仅输入 IP:Port 导致请求失败的问题)
+        // [修改] 允许以 / 开头的相对路径 (适配 Nginx 反向代理)
+        if (b && !b.startsWith('http') && !b.startsWith('/')) {
+            b = 'http://' + b;
+        }
+
+        // 3. 规范化斜杠拼接
         if (b.endsWith('/')) b = b.slice(0, -1);
         if (!p.startsWith('/')) p = '/' + p;
 
@@ -136,15 +169,15 @@ class ApiClient {
     }
 
     /**
-     * Prepares and executes the fetch request
-     * @param {string} method GET, POST, etc.
-     * @param {string} url Full URL
-     * @param {object} headers Headers object
-     * @param {string} bodyStr Raw body string (JSON or Key:Val)
-     * @param {string} bodyMode 'json' or 'form'
+     * 准备并执行 fetch 请求
+     * @param {string} method GET, POST 等
+     * @param {string} url 完整 URL
+     * @param {object} headers 请求头对象
+     * @param {string} bodyStr 原始请求体字符串 (JSON 或 Key:Val)
+     * @param {string} bodyMode 'json' 或 'form'
      */
     static async send(method, url, headers, bodyStr, bodyMode) {
-        // Merge Global Headers
+        // 合并全局 Headers
         const globalRaw = localStorage.getItem('sky_global_headers') || '';
         const globalHeaders = ApiClient.parseHeaders(globalRaw);
         const mergedHeaders = { ...globalHeaders, ...headers };
@@ -152,7 +185,7 @@ class ApiClient {
         const opts = { method, headers: mergedHeaders };
         let targetUrl = url;
 
-        // 0. Path Variable Substitution (Search for {name} in URL)
+        // 0. 路径参数替换 (查找 URL 中的 {name})
         const usedPathKeys = new Set();
         if (bodyMode === 'form' && bodyStr) {
             bodyStr.split('\n').forEach(line => {
@@ -162,7 +195,7 @@ class ApiClient {
                     const val = v.join(':').trim();
                     const placeholder = '{' + key + '}';
                     if (targetUrl.includes(placeholder)) {
-                        // Fix: Use split/join to replace ALL occurrences
+                        // 修复：使用 split/join 替换所有出现
                         targetUrl = targetUrl.split(placeholder).join(encodeURIComponent(val));
                         usedPathKeys.add(key);
                     }
@@ -170,11 +203,11 @@ class ApiClient {
             });
         }
 
-        // Content-Type Detection
+        // Content-Type 检测
         const hasCT = Object.keys(opts.headers).some(k => k.toLowerCase() === 'content-type');
 
         if (method === 'GET' || method === 'HEAD') {
-            // For GET: Parse Form Body as Query Params
+            // GET 请求: 将 Form Body 解析为查询参数 (Query Params)
             if (bodyMode === 'form' && bodyStr) {
                 const params = new URLSearchParams();
                 bodyStr.split('\n').forEach(line => {
@@ -191,7 +224,7 @@ class ApiClient {
             }
             delete opts.body;
         } else {
-            // For POST/PUT/etc
+            // POST/PUT 等非 GET 请求
             if (bodyMode === 'json') {
                 if (!hasCT) opts.headers['Content-Type'] = 'application/json';
                 try {
@@ -201,7 +234,7 @@ class ApiClient {
                     opts.body = bodyStr;
                 }
             } else {
-                // Form Mode -> x-www-form-urlencoded
+                // Form 模式 -> x-www-form-urlencoded
                 if (!hasCT) opts.headers['Content-Type'] = 'application/x-www-form-urlencoded';
                 const params = new URLSearchParams();
                 if (bodyStr) {
@@ -254,11 +287,11 @@ class ApiClient {
     }
 }
 
-// Store API responses: { "normalized_path": "response_text" }
+// 存储 API 响应：{ "normalized_path": "response_text" }
 window.API_RESPONSES = {};
 
 /**
- * History Manager for Console Persistence
+ * 历史记录管理器 (用于控制台状态持久化)
  */
 class HistoryManager {
     static saveState() {
@@ -283,7 +316,7 @@ class HistoryManager {
             if (state.method) document.getElementById('c-method').value = state.method;
             if (state.url) document.getElementById('c-url').value = state.url;
 
-            // Defense against "1" bug
+            // 防御性编程：防止 "1" 异常值
             if (state.base && state.base !== '1' && state.base.length > 1) {
                 document.getElementById('c-base').value = state.base;
             }
@@ -305,16 +338,30 @@ window.cBodyMode = 'json';
 
 // ============ P0 极简功能增强 ============
 // 请求历史功能
+/**
+ * 请求历史管理器
+ * 用于保存和加载用户的 API 请求历史
+ */
 const RequestHistory = {
+    /**
+     * 保存请求到 LocalStorage
+     * @param {Object} request - 请求对象（包含 method, url, headers 等）
+     */
     save(request) {
         try {
             const history = JSON.parse(localStorage.getItem('sky-history') || '[]');
+            // 添加时间戳并插入到数组开头
             history.unshift({ ...request, timestamp: Date.now() });
+            // 保留最近的 N 条记录
             localStorage.setItem('sky-history', JSON.stringify(history.slice(0, CONFIG.HISTORY_MAX_SIZE)));
         } catch (e) {
             console.warn('[RequestHistory] Failed to save:', e);
         }
     },
+    /**
+     * 从 LocalStorage 加载历史记录
+     * @returns {Array} 历史请求数组
+     */
     load() {
         try {
             return JSON.parse(localStorage.getItem('sky-history') || '[]');
@@ -323,10 +370,19 @@ const RequestHistory = {
             return [];
         }
     },
+    /**
+     * 恢复指定的历史记录到当前请求
+     * @param {number} index - 历史记录索引
+     */
     restore(index) {
         try {
             const history = this.load();
-            return history[index] || null;
+            const item = history[index];
+            if (item) {
+                // TODO: 恢复请求参数到 UI (待实现)
+                console.log('[RequestHistory] Restoring:', item);
+            }
+            return item || null; // 确保未找到时返回 null，保持一致性
         } catch (e) {
             console.warn('[RequestHistory] Failed to restore:', e);
             return null;
@@ -334,7 +390,12 @@ const RequestHistory = {
     }
 };
 
-// 3️⃣ JSON 美化功能
+/**
+ * JSON 美化函数
+ * 将 JSON 文本格式化并添加语法高亮
+ * @param {string} text - JSON 文本
+ * @returns {string} 格式化后的 HTML
+ */
 function prettyJSON(text) {
     try {
         const obj = JSON.parse(text);
@@ -345,9 +406,16 @@ function prettyJSON(text) {
     }
 }
 
+/**
+ * JSON 语法高亮函数
+ * 为 JSON 文本添加颜色高亮（字符串、数字、布尔值等）
+ * @param {string} json - JSON 文本
+ * @returns {string} 带有 HTML 样式的高亮文本
+ */
 function syntaxHighlight(json) {
     json = escapeHtml(json);
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+    const JSON_HIGHLIGHT_REGEX = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g;
+    return json.replace(JSON_HIGHLIGHT_REGEX, (match) => {
         let cls = 'json-number';
         if (/^"/.test(match)) {
             if (/:$/.test(match)) {
@@ -360,19 +428,22 @@ function syntaxHighlight(json) {
         } else if (/null/.test(match)) {
             cls = 'json-null';
         }
-        return '<span class="' + cls + '">' + match + '</span>';
+        return `<span class="${cls}">${match}</span>`;
     });
 }
 
 // 1️⃣ 历史记录 UI 逻辑
+/**
+ * 切换历史记录下拉菜单显示/隐藏
+ * @param {Event} e - 鼠标事件
+ */
 function toggleHistoryDropdown(e) {
     e?.stopPropagation();
     const dd = document.getElementById('history-dropdown');
-    if (dd.style.display === 'none') {
-        renderHistoryList();
-        dd.style.display = 'block';
-    } else {
-        dd.style.display = 'none';
+    if (dd) {
+        const isVisible = dd.style.display === 'block';
+        dd.style.display = isVisible ? 'none' : 'block';
+        if (!isVisible) renderHistoryList();
     }
 }
 
@@ -384,6 +455,10 @@ document.addEventListener('click', (e) => {
     }
 });
 
+/**
+ * 渲染历史记录列表
+ * 将保存的请求历史显示为下拉列表
+ */
 function renderHistoryList() {
     const list = document.getElementById('history-list');
     const history = RequestHistory.load();
@@ -393,89 +468,105 @@ function renderHistoryList() {
         return;
     }
 
-    // ✅ 修复内存泄漏：使用data-index代替onclick，通过事件委托处理
-    list.innerHTML = history.map((item, index) => `
-                <div data-history-index="${index}" class="history-item" style="padding:10px 15px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer; transition:background 0.2s;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-                        <span class="${item.method}" style="font-size:10px; padding:2px 6px; border-radius:4px;">${item.method}</span>
-                        <span style="font-size:10px; color:#666;">${new Date(item.timestamp).toLocaleTimeString()}</span>
-                    </div>
-                    <div style="font-size:12px; color:#ddd; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:monospace;">${item.url}</div>
-                </div>
-            `).join('');
+    list.innerHTML = history.slice(0, CONFIG.HISTORY_MAX_ITEMS).map((item, index) => `
+        <div class="history-item" data-index="${index}">
+            <div class="history-method">${item.method || 'GET'}</div>
+            <div class="history-url" title="${item.url || ''}">${(item.url || '').length > 40 ? (item.url || '').substring(0, 40) + '...' : (item.url || '')
+        }</div>
+        </div>
+    `).join('');
 
     // ✅ 使用事件委托代替每个元素添加监听器（避免内存泄漏）
     list.onclick = (e) => {
-        const historyItem = e.target.closest('.history-item');
-        if (historyItem) {
-            const index = parseInt(historyItem.getAttribute('data-history-index'));
+        const item = e.target.closest('.history-item');
+        if (item) {
+            const index = parseInt(item.dataset.index);
             restoreHistoryItem(index);
+            document.getElementById('history-dropdown').style.display = 'none';
         }
     };
 }
 
+/**
+ * 恢复历史记录项到当前请求表单
+ * @param {number} index - 历史记录的索引
+ */
 function restoreHistoryItem(index) {
-    const item = RequestHistory.restore(index);
+    const history = RequestHistory.load();
+    const item = history[index];
     if (!item) return;
 
-    document.getElementById('c-method').value = item.method;
-    document.getElementById('c-url').value = item.url;
-    document.getElementById('c-body').value = item.body || '';
-    document.getElementById('c-headers').value = item.headers || '';
+    // 恢复 URL 和方法
+    document.getElementById('inpUrl').value = item.url || '';
+    if (item.method) setMethod(item.method);
 
-    // 自动切换 Body Tab
-    if (item.body) {
-        switchConsoleTab(document.querySelector('.c-tab:first-child'), 'c-tab-body');
+    // 恢复请求头
+    if (item.headers) {
+        document.getElementById('headerKvContainer').innerHTML = '';
+        item.headers.split('\n').forEach(line => {
+            const [k, ...v] = line.split(':');
+            if (k) addHeaderKv(k.trim(), v.join(':').trim());
+        });
     }
-
-    document.getElementById('history-dropdown').style.display = 'none';
 }
 
 // 6️⃣ 侧边栏折叠逻辑 (Sidebar Toggle)
+/**
+ * 切换侧边栏显示状态
+ * 
+ * 控制侧边栏的显示/隐藏，并处理按钮位置和内容区域的响应式调整。
+ * @param {Event} [event] - 触发事件（可选）
+ */
 function toggleSidebarNew(event) {
     if (event) event.stopPropagation();
 
     const sb = document.getElementById('sidebar');
     const btn = document.getElementById('sidebar-toggle');
-    const container = document.querySelector('.container'); // Target Container
+    const container = document.querySelector('.container'); // 目标容器
 
-    // Force Top position
+    // 强制顶部定位
     btn.style.top = '260px';
 
     if (sb.style.display === 'none' || !sb.style.display || sb.style.opacity === '0') {
-        // Open Sidebar
+        // 打开侧边栏
         sb.style.display = 'block';
         setTimeout(() => sb.style.opacity = '1', 10);
 
-        // Push Content (Restored to prevent overlap/covering)
+        // 推动内容区 (恢复此逻辑以防止遮挡)
         if (container) {
             container.classList.add('padded-force');
         }
 
-        // Move Button
-        // Button stays fixed at left:20px
+        // 移动按钮
+        // 按钮固定在 left:20px
         btn.style.left = '20px';
         btn.querySelector('span').innerHTML = '✕';
-        btn.style.display = 'block'; // Ensure visible
+        btn.style.display = 'block'; // 确保可见
     } else {
-        // Close Sidebar
+        // 关闭侧边栏
         sb.style.opacity = '0';
 
-        // Wait for fade out to complete (300ms)
+        // 等待淡出动画完成 (300ms)
         setTimeout(() => {
             sb.style.display = 'none';
-            // Reset Content AFTER fade to avoid overlap glitch
+            // 动画后重置内容区，防止闪烁
             if (container) {
                 container.classList.remove('padded-force');
             }
         }, 300);
 
-        // Reset Button
+        // 重置按钮位置
         btn.style.left = '20px';
         btn.querySelector('span').innerHTML = '☰';
     }
 }
 
+/**
+ * HTML 转义工具函数
+ * 防止 XSS 攻击，将特殊字符转换为 HTML 实体
+ * @param {string} text - 需要转义的文本
+ * @returns {string} 转义后的安全文本
+ */
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -528,6 +619,10 @@ function toggleSection(el, groupName) {
     }
 }
 
+/**
+ * 显示模态框
+ * 渐隐动画显示 overlay 和 modal
+ */
 function showModal() {
     const overlay = document.getElementById('overlay');
     const modal = document.getElementById('modal');
@@ -539,6 +634,10 @@ function showModal() {
     }, 10);
 }
 
+/**
+ * 关闭模态框
+ * 渐隐动画隐藏 overlay 和 modal
+ */
 function closeModal() {
     const overlay = document.getElementById('overlay');
     const modal = document.getElementById('modal');
@@ -550,11 +649,18 @@ function closeModal() {
     }, 300);
 }
 
+/**
+ * 设置 HTTP 请求方法
+ * 同步更新 UI 显示，并根据方法类型显示/隐藏 Body 区域
+ * @param {string} m - HTTP 方法（GET, POST, PUT, DELETE 等）
+ */
 function setMethod(m) {
     document.getElementById('inpMethod').value = m;
+    // 更新分段控件选中状态
     document.querySelectorAll('#methodControl .segment').forEach(el => {
         el.classList.toggle('active', el.innerText === (m === 'DELETE' ? 'DEL' : m));
     });
+    // POST/PUT/PATCH 时显示 Body 区域
     const isBody = (m === 'POST' || m === 'PUT' || m === 'PATCH');
     const btns = document.getElementById('bodyTypeControl');
     if (btns) btns.style.display = isBody ? 'flex' : 'none';
@@ -562,10 +668,17 @@ function setMethod(m) {
     else setBodyMode('json');
 }
 
+/**
+ * 设置 Body 模式（JSON 或 Form）
+ * 切换 UI 显示不同的输入区域
+ * @param {string} mode - 'json' 或 'form'
+ */
 function setBodyMode(mode) {
+    // 更新切换按钮状态
     document.querySelectorAll('.body-toggle').forEach(el => {
         el.classList.toggle('active', el.getAttribute('data-mode') === mode);
     });
+    // 切换显示区域
     const isJson = (mode === 'json');
     document.getElementById('kvParamsArea').style.display = isJson ? 'none' : 'block';
     document.getElementById('jsonParamsArea').style.display = isJson ? 'block' : 'none';
@@ -589,7 +702,7 @@ function updateUrlPreview() {
             const k = row.querySelector('.key').value.trim();
             const v = row.querySelector('.val').value.trim();
             if (k) {
-                // Fix: Use split/join for robust replacement (No RegExp)
+                // 修复: 使用 split/join 进行稳健替换 (避免 RegExp 特殊字符问题)
                 finalPath = finalPath.split('{' + k + '}').join(v || `{${k}}`);
             }
         });
@@ -609,6 +722,11 @@ function addKv(key, val, isPath) {
     document.getElementById('kvContainer').appendChild(row);
 }
 
+/**
+ * 添加请求头键值对行
+ * @param {string} key - Header 名称
+ * @param {string} val - Header 值
+ */
 function addHeaderKv(key, val) {
     const row = document.createElement('div');
     row.className = 'kv-row';
@@ -632,7 +750,10 @@ function addHeaderKv(key, val) {
  */
 async function initDashboard() {
     try {
-        const res = await fetch('api-dashboard/meta');
+        // 修复: 使用注入的 CTX 变量获取绝对上下文路径，以适配 Nginx 子路径部署
+        const contextPath = (typeof CTX !== 'undefined' ? CTX : '');
+        const cleanContext = contextPath.endsWith('/') ? contextPath : contextPath + '/';
+        const res = await fetch(cleanContext + 'api-dashboard/meta');
         const data = await res.json();
         CONTROLLER_GROUPS = data.controllerGroups;
         BASE_URL = data.baseUrl;
@@ -645,7 +766,7 @@ async function initDashboard() {
         setupSearch();
     } catch (e) {
         console.error(e);
-        // User Feedback: Show error message in sidebar
+        // 用户反馈：在侧边栏显示错误消息
         const container = document.getElementById('api-list-container');
         if (container) {
             container.innerHTML = `<div style="padding:20px;text-align:center;color:var(--accent-red);">
@@ -654,6 +775,13 @@ async function initDashboard() {
                 <p style="font-size:12px;opacity:0.7;margin-bottom:15px">连接失败或服务器未响应</p>
                 <button onclick="initDashboard()" style="background:var(--accent-blue);border:none;color:#fff;padding:6px 16px;border-radius:12px;cursor:pointer;">重试</button>
              </div>`;
+        }
+        // Assuming this new error block is intended to be added for 'api-content'
+        if (document.getElementById('api-content')) {
+            document.getElementById('api-content').innerHTML = `<div style="padding:40px;text-align:center;color:var(--accent-red);">
+                <h4>⚠️ 加载详情失败</h4>
+                <p>${e.message}</p>
+            </div>`;
         }
     }
 }
@@ -720,7 +848,7 @@ function renderSidebar() {
             let m = ep.method.replace(/[\[\]]/g, '');
             if (m === 'getAll') m = 'ALL';
 
-            // ✅ 修复XSS：使用DOM API代替innerHTML，防止ep.description中的脚本注入
+            // Ensure innerTEXT is used to prevent XSS
             const badge = document.createElement('span');
             badge.className = `method-badge ${m}`;
             badge.textContent = m;
@@ -765,6 +893,9 @@ function renderSidebar() {
             testBtn.onclick = () => openTest(ep);
             actionsDiv.appendChild(testBtn);
 
+            // [REMOVED] TS Button moved to Modal
+            // actionsDiv.appendChild(createTsBtn(ep));
+
             item.appendChild(actionsDiv);
             list.appendChild(item);
         });
@@ -772,7 +903,7 @@ function renderSidebar() {
         container.appendChild(section);
     }
     // 强制显示侧边栏
-    // sidebar.style.display = 'block'; // Default hidden as per user request
+    // sidebar.style.display = 'block'; // 根据用户请求默认隐藏
 }
 
 /**
@@ -783,7 +914,17 @@ function renderSidebar() {
  * @param {Object} ep - API 端点对象
  * @deprecated 考虑使用 openConsoleWithPreset() 代替
  */
+/**
+ * 打开 API 测试模态框
+ * 
+ * 初始化并显示 API 测试模态框，加载参数和请求体模板。
+ * 
+ * @param {Object} ep - API 端点对象
+ */
 function openTest(ep) {
+    // 🌍 保存当前 EP 到全局，供 TS/Mock 功能使用
+    window.currentEp = ep;
+
     window.currentPathStr = ep.path;
     const host = document.getElementById('target-host').value;
     document.getElementById('inpUrl').value = ApiClient.resolveUrl(host, ep.path);
@@ -801,7 +942,7 @@ function openTest(ep) {
     }
     if (!document.getElementById('kvContainer').children.length) addKv('', '');
 
-    // Reset Headers
+    // 重置请求头
     document.getElementById('headerKvContainer').innerHTML = '';
     addHeaderKv('', '');
 
@@ -813,6 +954,11 @@ function openTest(ep) {
     showModal();
 }
 
+/**
+ * 打开控制台并预填 API 参数
+ * 基于 API 端点配置自动填充请求参数、方法和 URL
+ * @param {Object} ep - API 端点对象
+ */
 function openConsoleWithPreset(ep) {
     const modal = document.getElementById('consoleModal');
     document.getElementById('c-method').value = ep.method.replace(/[\[\]]/g, '');
@@ -830,17 +976,27 @@ function openConsoleWithPreset(ep) {
 }
 
 // --- CONSOLE SPECIFIC ---
+/**
+ * 控制台Tab切换
+ * 在 Body 和 Headers tab 之间切换
+ * @param {HTMLElement} tab - 被点击的标签元素
+ * @param {string} contentId - 要显示的内容区域 ID
+ */
 function switchConsoleTab(tab, contentId) {
-    // Toggle Tabs
+    // 切换标签页
     tab.parentElement.querySelectorAll('.c-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
 
-    // Toggle Content
+    // 切换内容
     document.getElementById('c-tab-body').style.display = 'none';
     document.getElementById('c-tab-headers').style.display = 'none';
     document.getElementById(contentId).style.display = 'block';
 }
 
+/**
+ * 设置控制台 Body 类型（JSON/Form）
+ * @param {string} mode - 'json' 或 'form'
+ */
 function setConsoleBodyType(mode) {
     window.cBodyMode = mode;
     document.getElementById('c-bt-json')?.classList.toggle('active', mode === 'json');
@@ -945,15 +1101,15 @@ function closeConsoleModal() {
 
 // --- UTILS ---
 /**
- * 设置搜索功能
+ * 初始化搜索功能
  * 
- * 监听搜索框输入，过滤 API 列表。
- * 区分大小写，匹配路径、方法、描述。
+ * 为搜索输入框添加事件监听，实现实时过滤 API 列表的功能。
+ * 支持中文、拼音、路径和方法搜索。
  */
 function setupSearch() {
-    const inp = document.getElementById('api-search');
-    if (!inp) return;
-    inp.oninput = (e) => {
+    const searchInput = document.getElementById('api-search');
+    if (!searchInput) return;
+    searchInput.oninput = (e) => {
         const term = e.target.value.toLowerCase();
         document.querySelectorAll('.api-item').forEach(item => {
             item.style.display = item.innerText.toLowerCase().includes(term) ? 'flex' : 'none';
@@ -965,13 +1121,16 @@ function setupSearch() {
     };
 }
 
+/**
+ * 从 LocalStorage 加载主机地址配置
+ */
 function loadHost() {
     const h = localStorage.getItem('sky-host');
-    // Basic validation: ignore "1" or too short values
+    // 基本验证：忽略 "1" 或过短的值
     if (h && h.length > 1 && h !== '1') {
         document.getElementById('target-host').value = h;
     }
-    // Trigger initial sync
+    // 触发初始同步
     updateListUrls();
 
     document.getElementById('target-host').oninput = function () {
@@ -980,6 +1139,9 @@ function loadHost() {
     };
 }
 
+/**
+ * 更新 API 列表中所有 URL 预览
+ */
 function updateListUrls() {
     const host = document.getElementById('target-host').value;
     document.querySelectorAll('.api-path').forEach(el => {
@@ -1004,7 +1166,13 @@ function updateListUrls() {
 function exportDoc(ep) {
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = 'api-dashboard/export-md';
+    form.method = 'POST';
+    // Fix: Use absolute context path from injected CTX variable
+    const contextPath = (typeof CTX !== 'undefined' ? CTX : '');
+    // Ensure contextPath ends with / and api-dashboard doesn't start with / to avoid //
+    const cleanContext = contextPath.endsWith('/') ? contextPath : contextPath + '/';
+    form.action = cleanContext + 'api-dashboard/export-md';
+    form.style.display = 'none';
     form.style.display = 'none';
 
     const inputUrl = document.createElement('input');
@@ -1012,8 +1180,8 @@ function exportDoc(ep) {
     inputUrl.value = ep.url;
     form.appendChild(inputUrl);
 
-    // Check if we have a stored response for this API
-    // Try matching path
+    // 检查是否有此 API 的存储响应
+    // 尝试匹配路径
     const validPath = ep.path || '';
     const resp = window.API_RESPONSES[validPath];
     if (resp) {
@@ -1028,11 +1196,19 @@ function exportDoc(ep) {
     document.body.removeChild(form);
 }
 
+/**
+ * 保存设置
+ * 将全局请求头配置保存到 LocalStorage
+ */
 function saveSettings() {
     localStorage.setItem('sky_global_headers', document.getElementById('globalHeaders').value);
     closeSettings();
 }
 
+/**
+ * 打开设置模态框
+ * 显示全局设置弹窗，加载已保存的配置
+ */
 function openSettings() {
     const s = document.getElementById('settingsOverlay');
     s.style.display = 'block';
@@ -1044,6 +1220,9 @@ function openSettings() {
     }, 10);
 }
 
+/**
+ * 关闭设置模态框
+ */
 function closeSettings() {
     const s = document.getElementById('settingsOverlay');
     s.classList.remove('active');
@@ -1072,7 +1251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Background Parallax
+// 背景视差效果
 document.addEventListener('scroll', () => {
     document.body.style.backgroundPositionY = -(window.scrollY * 0.2) + 'px';
 });
@@ -1100,12 +1279,12 @@ window.sendRequest = async function () {
 
     const res = await ApiClient.send(method, url, headers, bodyStr, isJson ? 'json' : 'form');
 
-    // Save Response for Export (Key: Path from window.currentPathStr)
+    // 保存响应以便导出（键：来自 window.currentPathStr 的路径）
     if (res.ok && window.currentPathStr) {
-        // Memory Protection: Cap cache size to 50 items
+        // 内存保护：限制缓存大小为 50 项
         const currentKeys = Object.keys(window.API_RESPONSES);
         if (currentKeys.length >= 50) {
-            delete window.API_RESPONSES[currentKeys[0]]; // Remove oldest
+            delete window.API_RESPONSES[currentKeys[0]]; // 移除最旧的
         }
         window.API_RESPONSES[window.currentPathStr] = res.text;
     }
@@ -1146,3 +1325,448 @@ function syntaxHighlight(json) {
         return `<span class="${cls}">${match}</span>`;
     });
 }
+
+// --- NEW FEATURES (TS & cURL) ---
+
+/**
+ * 修复: cURL 复制功能
+ * 从测试模态框中获取当前填写的参数，生成 cURL 命令
+ */
+function copyCurl() {
+    const method = document.getElementById('inpMethod').value || 'GET';
+    const url = document.getElementById('inpUrl').value;
+
+    if (!url) {
+        showToast('请先选择接口', 2000);
+        return;
+    }
+
+    let cmd = `curl -X ${method} "${url}"`;
+
+    // 请求头
+    // 1. Global Headers
+    const globalH = document.getElementById('globalHeaders')?.value;
+    if (globalH) {
+        globalH.split('\n').forEach(line => {
+            const p = line.split(':');
+            if (p.length >= 2) cmd += ` -H "${p[0].trim()}: ${p.slice(1).join(':').trim()}"`;
+        });
+    }
+    // 2. Local Headers
+    document.querySelectorAll('#headerKvContainer .kv-row').forEach(row => {
+        const k = row.querySelector('.k-input')?.value;
+        const v = row.querySelector('.v-input')?.value;
+        if (k) cmd += ` -H "${k}: ${v || ''}"`;
+    });
+
+    // 请求体
+    if (method !== 'GET') {
+        const bodyType = document.querySelector('#bodyTypeControl .active')?.dataset.mode || 'json';
+        if (bodyType === 'json') {
+            const json = document.getElementById('inpJson').value;
+            if (json) {
+                // 转义单引号以确保 Shell 安全
+                const escaped = json.replace(/'/g, "'\\''");
+                cmd += ` -H "Content-Type: application/json" -d '${escaped}'`;
+            }
+        } else {
+            document.querySelectorAll('#kvContainer .kv-row').forEach(row => {
+                const k = row.querySelector('.k-input')?.value;
+                const v = row.querySelector('.v-input')?.value;
+                if (k) cmd += ` -d "${k}=${v || ''}"`;
+            });
+        }
+    }
+
+    navigator.clipboard.writeText(cmd).then(() => {
+        showToast('📋 cURL 已复制到剪贴板');
+    }).catch(err => {
+        console.error('Copy failed', err);
+        showToast('❌ 复制失败，请手动复制');
+        prompt("Ctrl+C to copy:", cmd);
+    });
+}
+
+/**
+ * TypeScript 接口生成器
+ */
+/**
+ * TypeScript 接口生成器 (Enhanced)
+ * 1. 使用 'export interface'
+ * 2. 优化嵌套命名
+ * 3. 增加 JSDoc 注释
+ */
+function generateTS(jsonStr, rootName = 'Root') {
+    try {
+        const obj = JSON.parse(jsonStr);
+        let interfaces = new Map(); // 存储生成的接口以避免重复
+
+        const getType = (v, key, parentName) => {
+            if (v === null) return 'any';
+            const t = typeof v;
+            if (t === 'number') return 'number';
+            if (t === 'boolean') return 'boolean';
+            if (t === 'string') return 'string';
+            if (Array.isArray(v)) {
+                if (v.length === 0) return 'any[]';
+                // 递归检查数组项类型
+                const itemType = getType(v[0], key, parentName);
+                if (itemType.includes(' ')) return `(${itemType})[]`; // wrap complex union types
+                return `${itemType}[]`;
+            }
+            if (t === 'object') {
+                const typeName = capitalize(parentName) + capitalize(key);
+                generateInterface(v, typeName);
+                return typeName;
+            }
+            return 'any';
+        };
+
+        const generateInterface = (o, name) => {
+            if (interfaces.has(name)) return; // 避免无限循环或重复声明
+
+            let lines = [`export interface ${name} {`];
+            for (const k in o) {
+                const v = o[k];
+                const type = getType(v, k, name);
+                lines.push(`    ${k}: ${type};`);
+            }
+            lines.push('}');
+            interfaces.set(name, lines.join('\n'));
+        };
+
+        const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+        // 入口点
+        if (Array.isArray(obj)) {
+            const rootItemName = rootName.endsWith('List') ? rootName.slice(0, -4) : rootName + 'Item';
+            generateInterface(obj[0] || {}, rootItemName);
+            return Array.from(interfaces.values()).join('\n\n') + `\n\nexport type ${rootName} = ${rootItemName}[];`;
+        } else {
+            generateInterface(obj, rootName);
+            return Array.from(interfaces.values()).join('\n\n');
+        }
+
+    } catch (e) {
+        return `// 生成 TS 时出错：${e.message}\n// 请手动修改原始 JSON`;
+    }
+}
+
+/**
+ * [兼容性适配器] 供 dashboard.html 中的按钮调用
+ * 
+ * 映射关系：
+ * TS 按钮 -> fillRequestData (填充请求参数)
+ * Mock 按钮 -> mockResponseData (生成模拟返回值)
+ */
+function generateCurrentTS() {
+    if (!window.currentEp) {
+        showToast('❌ 请先选择一个接口');
+        return;
+    }
+    const ep = window.currentEp;
+    if (!ep.bodyTemplate) {
+        showToast('⚠️ 当前接口无请求体模板 (无需填充)');
+        return;
+    }
+    fillRequestData(ep.bodyTemplate);
+}
+
+function mockCurrentData() {
+    if (!window.currentEp) {
+        showToast('❌ 请先选择一个接口');
+        return;
+    }
+    const ep = window.currentEp;
+    // 即使没有模板，也可以生成简单的结构或提示
+    if (!ep.responseBodyTemplate) {
+        showToast('ℹ️ 当前接口无响应模板，生成通用 Mock');
+        mockResponseData('{"message": "Success", "code": 0}');
+        return;
+    }
+    mockResponseData(ep.responseBodyTemplate);
+}
+
+/**
+ * 注入 TS 按钮到侧边栏
+ * (Called by renderSidebar)
+ */
+/**
+ * 智能 Mock 数据生成器
+ * 用于在后端未实现时，前端生成假数据
+ */
+/**
+ * 注入 TS 和 Mock 按钮
+ */
+function createTsBtn(ep) {
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'contents';
+
+    // TS 按钮 -> 改为 "自动填充请求参数" (Fill Request)
+    // 用户的需求：TS 功能 = 接口参数填充
+    if (ep.bodyTemplate) {
+        const btnFill = document.createElement('button');
+        btnFill.className = 'btn-test';
+        btnFill.innerHTML = '⚡️ 填充';
+        btnFill.title = '根据 TS 定义自动填充请求参数 (Fill Request)';
+        btnFill.style.color = '#3178c6';
+        btnFill.onclick = (e) => {
+            e.stopPropagation();
+            fillRequestData(ep.bodyTemplate);
+        };
+        wrapper.appendChild(btnFill);
+    }
+
+    // Mock 按钮 -> "提供模拟返回值" (Mock Response)
+    if (ep.responseBodyTemplate) {
+        const btnMock = document.createElement('button');
+        btnMock.className = 'btn-test';
+        btnMock.innerHTML = '🎭 Mock';
+        btnMock.title = '生成模拟返回值 (Mock Response)';
+        btnMock.style.color = '#e2b340';
+        btnMock.onclick = (e) => {
+            e.stopPropagation();
+            mockResponseData(ep.responseBodyTemplate);
+        };
+        wrapper.appendChild(btnMock);
+    }
+
+    return wrapper;
+}
+
+/**
+ * [新功能] 根据模板自动填充请求参数
+ * 对应用户需求：TS功能 = 接口参数填充
+ */
+function fillRequestData(templateStr) {
+    try {
+        const template = JSON.parse(templateStr);
+        const mockData = generateMockFromTemplate(template);
+        const jsonStr = JSON.stringify(mockData, null, 2);
+
+        // 自动切换到 JSON 模式
+        setBodyMode('json');
+
+        // 填充到输入框
+        const input = document.getElementById('inpJson');
+        if (input) {
+            input.value = jsonStr;
+            // 触发高亮或格式化（如果有）
+        }
+        showToast('⚡️ 请求参数已自动填充');
+    } catch (e) {
+        console.error(e);
+        showToast('❌ 参数填充失败: 模板无效');
+    }
+}
+
+/**
+ * [优化] 生成模拟返回值
+ * 对应用户需求：Mock功能 = 模拟返回值
+ */
+function mockResponseData(templateStr) {
+    try {
+        const template = JSON.parse(templateStr);
+        const mockData = generateMockFromTemplate(template);
+
+        // 显示在响应结果框
+        const box = document.getElementById('responseBox');
+        if (box) {
+            box.innerHTML = syntaxHighlight(JSON.stringify(mockData, null, 2));
+            showToast('🎭 Mock 返回值已生成', 1500);
+        }
+    } catch (e) {
+        showToast('❌ Mock 生成失败');
+    }
+}
+
+/**
+ * [核心逻辑] 智能 Mock 数据生成器
+ * 递归生成符合类型的随机数据
+ */
+function generateMockFromTemplate(tpl) {
+    if (tpl === null) return null;
+
+    // 1. 基础类型
+    if (typeof tpl === 'number') {
+        return Math.floor(Math.random() * 1000); // 随机数字
+    }
+    if (typeof tpl === 'boolean') {
+        return Math.random() > 0.5;
+    }
+
+    // 2. 字符串智能识别
+    if (typeof tpl === 'string') {
+        const lower = tpl.toLowerCase();
+        if (lower.includes('time') || lower.includes('date')) return new Date().toISOString();
+        if (lower.includes('name')) return 'User-' + Math.floor(Math.random() * 100);
+        if (lower.includes('id')) return 'ID-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        if (lower.includes('email')) return `test${Math.floor(Math.random() * 100)}@example.com`;
+        if (lower.includes('url')) return 'http://localhost:8080/demo';
+        if (lower.includes('status')) return 'ACTIVE';
+        if (lower.includes('desc')) return 'This is a mock description.';
+        return 'Mock String';
+    }
+
+    // 3. 数组生成 (生成 2 个示例项)
+    if (Array.isArray(tpl)) {
+        if (tpl.length === 0) return [];
+        return [generateMockFromTemplate(tpl[0]), generateMockFromTemplate(tpl[0])];
+    }
+
+    // 4. 对象递归
+    if (typeof tpl === 'object') {
+        const res = {};
+        for (const k in tpl) {
+            res[k] = generateMockFromTemplate(tpl[k]);
+        }
+        return res;
+    }
+
+    return tpl;
+}
+
+// 工具：简单提示
+function showToast(msg, duration = 2000) {
+    let t = document.getElementById('sky-toast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'sky-toast';
+        t.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:8px; z-index:9999; font-size:14px; pointer-events:none; transition:opacity 0.3s;";
+        document.body.appendChild(t);
+    }
+    t.innerText = msg;
+    t.style.opacity = '1';
+    setTimeout(() => t.style.opacity = '0', duration);
+}
+// 为 onclick 全局导出
+/**
+ * 修复: cURL 复制功能 (智能版)
+ * 
+ * 自动识别测试弹窗或高级控制台的上下文。
+ * 智能处理 Content-Type：GET 请求不添加，POST/PUT 自动添加（除非手动已设）。
+ */
+function copyCurl() {
+    // 1. 判断来源 (简单弹窗 vs 高级控制台)
+    const isConsole = document.getElementById('consoleModal').style.display !== 'none';
+
+    // 2. 获取基础信息
+    const methodElem = document.getElementById(isConsole ? 'c-method' : 'inpMethod');
+    const urlElem = document.getElementById(isConsole ? 'c-url' : 'inpUrl');
+
+    const valMethod = isConsole ? methodElem.value : (methodElem.value || 'GET');
+    const valUrl = isConsole
+        ? ApiClient.resolveUrl(document.getElementById('c-base').value, urlElem.value)
+        : urlElem.value;
+
+    if (!valUrl) {
+        showToast('请先选择接口', 2000);
+        return;
+    }
+
+    let cmd = `curl -X ${valMethod} "${valUrl}"`;
+    let addedHeaders = new Set(); // 追踪已添加的 Header，防止重复
+
+    // 3. 处理 Headers
+    // (A) 全局 Headers
+    const globalH = document.getElementById('globalHeaders')?.value;
+    if (globalH) {
+        globalH.split('\n').forEach(line => {
+            const p = line.split(':');
+            if (p.length >= 2) {
+                const key = p[0].trim();
+                cmd += ` -H "${key}: ${p.slice(1).join(':').trim()}"`;
+                addedHeaders.add(key.toLowerCase());
+            }
+        });
+    }
+
+    // (B) 局部 Headers
+    if (isConsole) {
+        // 控制台: 解析文本域
+        const cHeaders = document.getElementById('c-headers').value;
+        if (cHeaders) {
+            cHeaders.split('\n').forEach(line => {
+                const p = line.split(':');
+                if (p.length >= 2) {
+                    const key = p[0].trim();
+                    cmd += ` -H "${key}: ${p.slice(1).join(':').trim()}"`;
+                    addedHeaders.add(key.toLowerCase());
+                }
+            });
+        }
+    } else {
+        // 简单弹窗: 解析 KV 行
+        document.querySelectorAll('#headerKvContainer .kv-row').forEach(row => {
+            const k = row.querySelector('.k-input')?.value;
+            const v = row.querySelector('.v-input')?.value;
+            if (k) {
+                cmd += ` -H "${k}: ${v || ''}"`;
+                addedHeaders.add(k.toLowerCase());
+            }
+        });
+    }
+
+    // 4. 处理 Body 和 Content-Type
+    // 只有非 GET/HEAD 请求才处理 Body
+    if (valMethod !== 'GET' && valMethod !== 'HEAD') {
+        let bodyType = 'json';
+        if (isConsole) {
+            const activeSeg = document.querySelector('#c-body-controls .segment.active');
+            if (activeSeg && activeSeg.innerText.trim() === 'Form') bodyType = 'form';
+        } else {
+            const activeSeg = document.querySelector('#bodyTypeControl .active');
+            if (activeSeg && activeSeg.dataset.mode === 'form') bodyType = 'form';
+        }
+
+        if (bodyType === 'json') {
+            const jsonVal = document.getElementById(isConsole ? 'c-body' : 'inpJson').value;
+            if (jsonVal) {
+                // 仅当用户未手动设置 Content-Type 时自动添加
+                if (!addedHeaders.has('content-type')) {
+                    cmd += ` -H "Content-Type: application/json"`;
+                }
+                // 转义单引号，防止 Shell 注入
+                const escaped = jsonVal.replace(/'/g, "'\\''");
+                cmd += ` -d '${escaped}'`;
+            }
+        } else {
+            // 表单数据
+            if (isConsole) {
+                const raw = document.getElementById('c-body').value;
+                if (raw) {
+                    if (!addedHeaders.has('content-type')) {
+                        cmd += ` -H "Content-Type: application/x-www-form-urlencoded"`;
+                    }
+                    cmd += ` -d '${raw.replace(/'/g, "'\\''")}'`;
+                }
+            } else {
+                document.querySelectorAll('#kvContainer .kv-row').forEach(row => {
+                    const k = row.querySelector('.k-input')?.value;
+                    const v = row.querySelector('.v-input')?.value;
+                    if (k) cmd += ` -d "${k}=${v || ''}"`;
+                });
+            }
+        }
+    }
+
+    navigator.clipboard.writeText(cmd).then(() => {
+        showToast('📋 cURL 已复制到剪贴板');
+    }).catch(err => {
+        console.error('Copy failed', err);
+        showToast('❌ 复制失败，请手动复制');
+        prompt("Ctrl+C to copy:", cmd);
+    });
+}
+
+
+
+
+// 全局导出
+window.copyCurl = copyCurl;
+window.copyResponse = function () {
+    const text = document.getElementById('c-res-body').innerText;
+    if (text) {
+        navigator.clipboard.writeText(text).then(() => showToast('✅ 响应已复制'));
+    }
+};

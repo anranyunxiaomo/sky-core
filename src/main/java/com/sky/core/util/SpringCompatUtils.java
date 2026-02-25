@@ -102,18 +102,18 @@ public class SpringCompatUtils {
     public static Set<String> getActivePatterns(RequestMappingInfo info) {
         Set<String> patterns = new HashSet<>();
 
-        // 1. Try Legacy: getPatternsCondition() -> getPatterns()
+        // 1. 尝试旧版: getPatternsCondition() -> getPatterns()
         try {
              PatternsRequestCondition condition = info.getPatternsCondition();
              if (condition != null) {
                  patterns.addAll(condition.getPatterns());
              }
         } catch (Exception e) {
-            // Ignore
+            // 忽略
         }
 
-        // 2. Try New (Spring 5.3+): getPathPatternsCondition() -> getPatterns() -> getPatternString()
-        // Use reflection to avoid compile/runtime errors if class is missing on classpath on very old constructs
+        // 2. 尝试新版 (Spring 5.3+): getPathPatternsCondition() -> getPatterns() -> getPatternString()
+        // 使用反射以避免在非常旧的结构上的类路径中缺少类时出现编译/运行时错误
         try {
             Method getPathPatternsMethod = RequestMappingInfo.class.getMethod("getPathPatternsCondition");
             Object pathPatternsCondition = getPathPatternsMethod.invoke(info);
@@ -132,7 +132,7 @@ public class SpringCompatUtils {
                 }
             }
         } catch (NoSuchMethodException e) {
-            // Expected on Spring Boot < 2.4
+            // 在 Spring Boot < 2.4 上预期会有此异常
         } catch (Exception e) {
             // 反射调用失败，静默忽略
         }

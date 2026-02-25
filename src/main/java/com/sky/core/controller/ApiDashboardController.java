@@ -210,17 +210,16 @@ public class ApiDashboardController {
     /**
      * 获取当前服务的基础 URL (支持 Docker/Nginx 反向代理)
      */
+    /**
+     * 获取当前服务的基础 URL (相对路径模式)
+     * <p>
+     * 仅返回 Context Path (如 "/api" 或 "")，不包含 Scheme/Host/Port。
+     * 这使得前端可以使用相对路径发起请求，完美适配 Nginx 反向代理和 Docker 内部网络。
+     * </p>
+     */
     private String getBaseUrl(javax.servlet.http.HttpServletRequest request) {
-        String scheme = request.getScheme();
-        String serverName = request.getServerName();
-        int serverPort = request.getServerPort();
         String contextPath = request.getContextPath();
-
-        // Handle standard ports
-        if ((scheme.equals("http") && serverPort == 80) || (scheme.equals("https") && serverPort == 443)) {
-            return String.format("%s://%s%s", scheme, serverName, contextPath);
-        }
-        return String.format("%s://%s:%d%s", scheme, serverName, serverPort, contextPath);
+        return contextPath == null ? "" : contextPath;
     }
 
 
@@ -317,7 +316,7 @@ public class ApiDashboardController {
             RequestMappingInfo mappingInfo = entry.getKey();
             HandlerMethod handlerMethod = entry.getValue();
             
-            // Filter out the Dashboard Controller itself
+            // 过滤掉仪表盘控制器自身
             if (handlerMethod.getBeanType().equals(ApiDashboardController.class)) {
                 continue;
             }
@@ -326,7 +325,7 @@ public class ApiDashboardController {
             ParameterInfo paramInfo = parseMethodParameters(handlerMethod);
             String paramType = paramInfo.isJson ? "JSON" : "FORM";
 
-            // Return Type Analysis
+            // 返回类型分析
             String responseBodyTemplate = "";
             String returnTypeSimpleName = "void";
             try {
@@ -349,18 +348,18 @@ public class ApiDashboardController {
             Set<RequestMethod> methods = (methodsCondition != null) ? methodsCondition.getMethods() : Collections.emptySet();
 
             for (String pattern : patterns) {
-                // Skip dashboard itself, error endpoints, and internal views
+                // 跳过仪表盘自身、错误端点和内部视图
                 // 过滤仪表盘自身的端点
                 if (DASHBOARD_PATHS.contains(pattern)) continue;
 
                 Map<String, String> endpoint = new HashMap<>();
                 endpoint.put("url", getBaseUrl(request) + pattern);
-                endpoint.put("path", pattern); // Raw path for filtering
+                endpoint.put("path", pattern); // 原始路径用于过滤
                 endpoint.put("method", methods.isEmpty() ? "ALL" : methods.toString());
                 
                 String controllerSimpleName = handlerMethod.getBeanType().getSimpleName();
                 String controllerDesc = JavaDocReader.getClassDescription(handlerMethod.getBeanType());
-                // Use Desc if available, otherwise SimpleName
+                // 如果有描述则使用描述，否则使用 SimpleName
                 String controllerInternalName = controllerSimpleName; 
                 String displayGroupName = getOrDefault(controllerDesc, controllerSimpleName);
 
@@ -368,13 +367,13 @@ public class ApiDashboardController {
                 endpoint.put("function", handlerMethod.getMethod().getName());
                 endpoint.put("paramType", paramType);
                 endpoint.put("params", String.join(",", paramInfo.paramNames));
-                // Join with special delimiter for easy parsing
+                // 使用特殊分隔符连接以便于解析
                 endpoint.put("requestParamsDetailed", String.join("||", paramInfo.detailedParams));
                 endpoint.put("bodyTemplate", paramInfo.bodyTemplate);
                 endpoint.put("responseBodyTemplate", responseBodyTemplate);
                 endpoint.put("returnType", returnTypeSimpleName);
                 
-                // Analyze Response Fields
+                // 分析响应字段
                 List<String> validResponseFields = new ArrayList<>();
                 try {
                     Type returnType = handlerMethod.getReturnType().getGenericParameterType();
@@ -382,13 +381,13 @@ public class ApiDashboardController {
                         analyzeResponseFields(returnType, "", 0, validResponseFields);
                     }
                 } catch (Exception e) {
-                   // ignore
+                   // 忽略异常
                 }
                 endpoint.put("responseFieldsDetailed", String.join("||", validResponseFields));
                 
-                // Description Priority: JavaDoc
+                // 描述优先级：JavaDoc
                 String desc = "";
-                // Try to read from Source Code JavaDoc
+                // 尝试从源码 JavaDoc 读取
                 String doc = JavaDocReader.getMethodDescription(handlerMethod.getBeanType(), handlerMethod.getMethod());
                 if (doc != null) desc = doc;
                 endpoint.put("description", desc);
@@ -397,7 +396,7 @@ public class ApiDashboardController {
             }
         }
         
-        // Sort inside groups
+        // 组内排序
         controllerGroups.forEach((k, v) -> v.sort(Comparator.comparing(m -> m.get("url"))));
 
         meta.put("controllerGroups", controllerGroups);
@@ -416,7 +415,7 @@ public class ApiDashboardController {
          
          if (clazz == null || BeanUtils.isSimpleValueType(clazz) || clazz.getName().startsWith("java.lang") && !Iterable.class.isAssignableFrom(clazz) && !Map.class.isAssignableFrom(clazz)) return;
          
-         // Handle Collection/Iterable
+         // 处理集合/迭代器
          if (Iterable.class.isAssignableFrom(clazz) || clazz.isArray()) {
              if (type instanceof ParameterizedType) {
                  Type genericType = ((ParameterizedType) type).getActualTypeArguments()[0];
@@ -427,12 +426,12 @@ public class ApiDashboardController {
              return;
          }
          
-         // Handle Map
+         // 处理 Map
          if (Map.class.isAssignableFrom(clazz)) {
              if (type instanceof ParameterizedType) {
                  Type[] typeArgs = ((ParameterizedType) type).getActualTypeArguments();
                  if (typeArgs.length >= 2) {
-                     // Key is usually string, analyze value
+                     // Key 通常是字符串，分析 Value
                      analyzeResponseFields(typeArgs[1], prefix, depth + 1, fields);
                  }
              }
@@ -444,11 +443,11 @@ public class ApiDashboardController {
              String fName = (prefix.isEmpty() ? "" : prefix + ".") + field.getName();
              String fType = field.getType().getSimpleName();
              
-             // If field is generic (e.g. List<String> items), try to get nicer display name
+             // 如果字段是泛型（如 List<String> items），尝试获取更友好的显示名称
              if (field.getGenericType() instanceof ParameterizedType) {
                  fType = field.getGenericType().toString().replaceAll("class |interface ", "").replaceAll("java\\.lang\\.", "").replaceAll("java\\.util\\.", "");
-                 // Simplify full package names for custom classes too if possible, but regex is risky for all. 
-                 // Just keeping it simple for now or stick to simple name if not parameterized.
+                 // 简化自定义类的完整包名。
+                 // 暂时保持简单，如果不是参数化类型则使用简单名称。
              }
 
              String fDesc = cleanJavaDocDescription(
@@ -458,11 +457,11 @@ public class ApiDashboardController {
              
              fields.add(fName + "|" + fType + "|" + fDesc);
              
-             // Recursive for complex types
+             // 复杂类型递归处理
              if (!BeanUtils.isSimpleValueType(field.getType()) && !field.getType().getName().startsWith("java.lang")) {
                  analyzeResponseFields(field.getType(), fName, depth + 1, fields);
              } else if (Collection.class.isAssignableFrom(field.getType()) || Map.class.isAssignableFrom(field.getType())) {
-                 // Also dive into fields that are Collections/Maps
+                 // 同样深入处理集合/Map 类型的字段
                  analyzeResponseFields(field.getGenericType(), fName, depth + 1, fields);
              }
          }
@@ -515,7 +514,7 @@ public class ApiDashboardController {
             return Collections.singletonList(generateTemplate(rawClass.getComponentType(), depth + 1));
         }
 
-        // Complex Object
+        // 复杂对象
         Map<String, Object> map = new LinkedHashMap<>();
         for (Field field : rawClass.getDeclaredFields()) {
             map.put(field.getName(), generateTemplate(field.getGenericType(), depth + 1));
@@ -531,9 +530,9 @@ public class ApiDashboardController {
                            @RequestParam(required = false) String responseBody,
                            javax.servlet.http.HttpServletRequest request, 
                            javax.servlet.http.HttpServletResponse response) {
-        // Set headers to force file download
+        // 设置 Header 强制文件下载
         response.setHeader("Content-Disposition", "attachment; filename=\"api-doc.md\"");
-        // Response type is already set by produces, but we can reinforce it
+        // 响应类型已由 produces 设置，但我们可以加强它
         response.setContentType("text/markdown; charset=UTF-8");
 
         String baseUrl = getBaseUrl(request);
@@ -541,19 +540,19 @@ public class ApiDashboardController {
         
         // 使用静态缓存的 Logo（启动时已加载）
         
-        // Find EP
+        // 查找端点
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = requestMappingHandlerMapping.getHandlerMethods();
         for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
             Set<String> patterns = com.sky.core.util.SpringCompatUtils.getActivePatterns(entry.getKey());
             for (String pattern : patterns) {
                  String fullUrl = getBaseUrl(request) + pattern;
                  if (fullUrl.equals(matchUrl) || pattern.equals(url)) {
-                     // Generate MD
-                     Map<String, String> ep = new HashMap<>(); // Re-construct or reuse meta logic?
-                     // Ideally reuse logic. But for now, simple reconstruction or look up in cached meta if possible.
-                     // But meta is request-scoped generated.
+                     // 生成 Markdown
+                     Map<String, String> ep = new HashMap<>(); // 重构或复用元数据逻辑？
+                     // 理想情况下复用逻辑。但目前为了简单起见，直接重构或在缓存的元数据中查找（如果可能）。
+                     // 但元数据是请求范围内生成的。
                      
-                     // Quick hack: Generate partial meta for this single EP
+                     // 快速处理：仅为该端点生成部分元数据
                      HandlerMethod handlerMethod = entry.getValue();
                      ep.put("function", handlerMethod.getMethod().getName());
                      ep.put("path", pattern);
@@ -569,10 +568,10 @@ public class ApiDashboardController {
                       ParameterInfo paramInfo = parseMethodParameters(handlerMethod);
                       ep.put("requestParamsDetailed", String.join("||", paramInfo.detailedParams));
                       
-                      // Return Type & Response Fields
+                      // 返回类型和响应字段
                       Method method = handlerMethod.getMethod();
                      
-                     // Return Type & Response Fields
+                     // 返回类型和响应字段
                      Class<?> returnType = method.getReturnType();
                      ep.put("returnType", returnType.getSimpleName());
                      try {
@@ -588,7 +587,7 @@ public class ApiDashboardController {
                     // 响应字段解析失败不影响主流程
                 }
                      
-                     // Add Logo
+                     // 添加 Logo
                      if (LOGO_BASE64 != null) {
                          ep.put("logoBase64", LOGO_BASE64);
                      }
@@ -597,7 +596,7 @@ public class ApiDashboardController {
                  }
             }
         }
-        return "# API Not Found\n\nThe requested API URL could not be found in the current registry.\n\nURL: " + url;
+        return "# 找不到接口\n\n在当前注册表中未找到请求的 API URL。\n\nURL: " + url;
     }
 
     private String generateMarkdown(Map<String, String> ep, String responseBody) {
@@ -619,21 +618,21 @@ public class ApiDashboardController {
         String title = getOrDefault(description, getOrDefault(function, "未命名接口"));
         sb.append("# ").append(title).append("\n\n");
         
-        sb.append("## 基本信息 (Basic Info)\n");
-        sb.append("| 项目 (Item) | 内容 (Value) |\n");
+        sb.append("## 基本信息\n");
+        sb.append("| 项目 | 内容 |\n");
         sb.append("| --- | --- |\n");
-        sb.append("| **接口路径 (Path)** | `").append(getOrDefault(ep.get("path"), "unknown")).append("` |\n");
-        sb.append("| **请求方法 (Method)** | ").append(getOrDefault(ep.get("method"), "ALL")).append(" |\n");
-        sb.append("| **控制器 (Controller)** | ").append(getOrDefault(ep.get("bean"), "unknown")).append(" |\n\n");
+        sb.append("| **接口路径** | `").append(getOrDefault(ep.get("path"), "unknown")).append("` |\n");
+        sb.append("| **请求方法** | ").append(getOrDefault(ep.get("method"), "ALL")).append(" |\n");
+        sb.append("| **控制器** | ").append(getOrDefault(ep.get("bean"), "unknown")).append(" |\n\n");
         
-        sb.append("## 请求参数 (Request Parameters)\n");
+        sb.append("## 请求参数\n");
         String detailedParams = ep.get("requestParamsDetailed");
         if (isNullOrEmpty(detailedParams)) {
-            sb.append("*无参数 (No parameters)*\n\n");
+            sb.append("*无参数*\n\n");
         } else {
-            sb.append("| 参数名 (Name) | 类型 (Type) | 位置 (Location) | 描述 (Description) |\n");
+            sb.append("| 参数名 | 类型 | 位置 | 描述 |\n");
             sb.append("| --- | --- | --- | --- |\n");
-            // Parsing "Name|Type|Loc|Desc || Name|Type|Loc|Desc"
+            // 解析 "Name|Type|Loc|Desc || Name|Type|Loc|Desc"
             String[] paramsList = detailedParams.split("\\|\\|");
             for (String pStr : paramsList) {
                 if (pStr.trim().isEmpty()) continue;
@@ -641,7 +640,7 @@ public class ApiDashboardController {
                 if (parts.length >= 4) {
                      sb.append("| ").append(parts[0]).append(" | `").append(parts[1]).append("` | ").append(parts[2]).append(" | ").append(parts[3]).append(" |\n");
                 } else {
-                     // Fallback mechanism just in case
+                     // 兜底机制以防万一
                      sb.append("| ").append(pStr).append(" | - | - | - |\n");
                 }
             }
@@ -650,17 +649,17 @@ public class ApiDashboardController {
         
         String body = ep.get("bodyTemplate");
         if (!isNullOrEmpty(body)) {
-            sb.append("## 请求体示例 (Request Body Example)\n");
+            sb.append("## 请求体示例\n");
             sb.append("```json\n").append(body).append("\n```\n");
         }
 
         String returnType = ep.get("returnType");
         String respFields = ep.get("responseFieldsDetailed");
         
-        sb.append("## 响应参数 (Response Parameters)\n");
+        sb.append("## 响应参数\n");
         
         if (respFields != null && !respFields.isEmpty()) {
-            sb.append("| 字段名 (Field) | 类型 (Type) | 描述 (Description) |\n");
+            sb.append("| 字段名 | 类型 | 描述 |\n");
             sb.append("| --- | --- | --- |\n");
              String[] fieldsList = respFields.split("\\|\\|");
             for (String fStr : fieldsList) {
@@ -675,12 +674,12 @@ public class ApiDashboardController {
         
         String respTemplate = ep.get("responseBodyTemplate");
         if (respTemplate != null && !respTemplate.isEmpty() && !respTemplate.equals("{}")) {
-             sb.append("### 响应示例 (Example)\n");
+             sb.append("### 响应示例\n");
              sb.append("```json\n").append(respTemplate).append("\n```\n");
         }
 
         if (!isNullOrEmpty(responseBody)) {
-            sb.append("## 实际响应结果 (Actual Response Result)\n");
+            sb.append("## 实际响应结果\n");
             sb.append("```json\n").append(responseBody).append("\n```\n");
         }
         

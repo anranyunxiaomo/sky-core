@@ -1,15 +1,15 @@
 /* =================================================================
-   CSS 变量定义 (CSS Variables)
+   CSS 变量定义
    =================================================================
    集中管理颜色、字体、间距等全局样式变量
    修改这里可以快速调整整体主题风格
    ================================================================= */
 
 :root {
-    /* 背景色 (Background Colors) - macOS 深色主题 */
+    /* 背景色 - macOS 深色主题 */
     --bg-body: #000000;
 
-    /* 毛玻璃效果变量 (Glassmorphism Variables) */
+    /* 毛玻璃效果变量 */
     --glass-bg: rgba(20, 20, 25, 0.7);
     /* 毛玻璃背景色 */
     --glass-border: rgba(255, 255, 255, 0.1);
@@ -19,13 +19,13 @@
     --glass-blur: blur(24px);
     /* 毛玻璃模糊度 */
 
-    /* 文字颜色 (Text Colors) */
+    /* 文字颜色 */
     --text-primary: #ffffff;
     /* 主要文字颜色 */
     --text-secondary: #aaaaaa;
     /* 次要文字颜色 */
 
-    /* 强调色 (Accent Colors) */
+    /* 强调色 */
     --accent-blue: #0071e3;
     /* 蓝色 - 主要操作 */
     --accent-red: #ff3b30;
@@ -35,17 +35,17 @@
     --accent-orange: #ff9500;
     /* 橙色 - PUT方法 */
 
-    /* 边框颜色 (Border Colors) */
+    /* 边框颜色 */
     --border-light: rgba(255, 255, 255, 0.1);
 
-    /* 字体族 (Typography) */
+    /* 字体族 */
     --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --font-mono: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
 }
 
 
 /* =================================================================
-   基础样式 (Base Styles)
+   基础样式
    =================================================================
    页面基础设置和容器布局
    ================================================================= */
@@ -62,7 +62,7 @@ html {
 }
 
 /* =================================================================
-   页头样式 (Header Styles)
+   页头样式
    =================================================================
    顶部标题和副标题的样式
    修改字体大小：h1 (主标题), p.subtitle (副标题)
@@ -200,7 +200,7 @@ p.subtitle {
     -webkit-backdrop-filter: blur(40px) saturate(150%);
     border-radius: 28px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-    /* Softer shadow */
+    /* 柔和阴影 */
     border: 1px solid rgba(255, 255, 255, 0.6);
     overflow: hidden;
     transition: transform 0.3s ease;
@@ -236,7 +236,7 @@ p.subtitle {
     font-weight: 700;
     padding: 6px 12px;
     border-radius: 20px;
-    /* Full Pill */
+    /* 完整胶囊形状 */
     width: 60px;
     text-align: center;
     margin-right: 24px;
@@ -281,7 +281,7 @@ p.subtitle {
     flex-direction: column;
     gap: 6px;
     min-width: 0;
-    /* Enable flex child truncation */
+    /* 启用弹性子元素截断 */
 }
 
 .api-path {
@@ -337,7 +337,7 @@ p.subtitle {
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
     white-space: nowrap;
-    /* ✨ FIX: Ensure button text never wraps */
+    /* ✨ 修复: 确保按钮文字不换行 */
 }
 
 .btn-test:hover {
@@ -361,7 +361,7 @@ p.subtitle {
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.2);
-    /* Lighter overlay for glass feel */
+    /* 更浅的遮罩以实现玻璃效果 */
     backdrop-filter: blur(15px);
     z-index: 100;
     display: none;
@@ -386,8 +386,11 @@ p.subtitle {
     display: none;
     opacity: 0;
     transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
-    /* Apple Ease */
+    /* Apple 风格缓动效果 */
     border: 1px solid rgba(255, 255, 255, 0.4);
+    /* 防止模态框溢出视口 */
+    max-height: 90vh !important;
+    overflow-y: auto !important;
 }
 
 .modal.active {
@@ -408,7 +411,7 @@ p.subtitle {
 }
 
 /* =================================================================
-   表单元素 (Form Elements)
+   表单元素
    =================================================================
    输入框、下拉框、文本域等表单组件
    修改：.form-label (标签), .form-input (输入框), textarea (文本域)
@@ -446,7 +449,7 @@ p.subtitle {
 }
 
 /* =================================================================
-   分段控制器 (Segmented Control)
+   分段控制器
    =================================================================
    iOS 风格的分段切换控件，用于 Body Type 切换等
    修改：.segmented-control (容器), .segment (分段)
@@ -458,7 +461,7 @@ p.subtitle {
     background: rgba(118, 118, 128, 0.12);
     padding: 3px;
     border-radius: 12px;
-    /* iOS Segment default */
+    /* iOS 分段默认样式 */
 }
 
 .segment {
@@ -485,7 +488,7 @@ p.subtitle {
 }
 
 /* =================================================================
-   JSON 编辑器 (JSON Editor)
+   JSON 编辑器
    =================================================================
    用于编辑 Request Body 的文本域
    修改：textarea (文本域背景、颜色等)
@@ -496,7 +499,7 @@ textarea {
     width: 100%;
     border-radius: 18px;
     background: #1e1e1e;
-    /* Dark IDE Theme */
+    /* 深色 IDE 主题 */
     color: #d4d4d4;
     font-family: var(--font-mono);
     font-size: 13px;
@@ -513,7 +516,7 @@ textarea:focus {
     border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Buttons */
+/* 按钮样式 */
 .btn-primary {
     background: var(--accent-blue);
     color: white;
@@ -612,7 +615,7 @@ textarea:focus {
     transform: translateY(0);
 }
 
-/* Response Area */
+/* 响应区域 */
 .response-box {
     margin-top: 24px;
     padding: 24px;
@@ -629,7 +632,7 @@ textarea:focus {
     box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.02);
 }
 
-/* --- Advanced Console Modal Styles --- */
+/* --- 高级控制台模态框样式 --- */
 .console-layout {
     display: flex;
     gap: 24px;
@@ -647,7 +650,7 @@ textarea:focus {
 
 .c-col-right {
     background: rgba(245, 245, 247, 0.8);
-    /* Off-white */
+    /* 浅白色 */
     padding: 20px;
     border-radius: 20px;
     border: 1px solid rgba(0, 0, 0, 0.05);
@@ -674,7 +677,7 @@ textarea:focus {
     border-bottom-color: var(--accent-blue);
 }
 
-/* Status Bar */
+/* 状态栏 */
 .c-status-bar,
 #t-status-bar {
     display: flex;
@@ -688,7 +691,7 @@ textarea:focus {
     align-items: center;
 }
 
-/* Badges */
+/* 徽章 */
 .c-badge {
     padding: 4px 8px;
     border-radius: 6px;
@@ -730,7 +733,7 @@ textarea:focus {
 }
 
 /* =================================================================
-   深色主题覆盖 (Dark Mode Overrides)
+   深色主题覆盖 (深色模式覆盖)
    =================================================================
    星空背景深色主题的颜色覆盖
    修改这里可调整整体颜色方案
@@ -741,23 +744,23 @@ textarea:focus {
     --text-secondary: #dddddd !important;
     --bg-body: #0b0b15 !important;
     --accent-blue: #2997ff !important;
-    /* Brighter Blue */
+    /* 更明亮的蓝色 */
     --glass-bg: rgba(20, 20, 30, 0.65) !important;
-    /* More transparent to see stars */
+    /* 更透明以显示星星 */
 }
 
 body {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffffff' d='M12,0L14.5,9.5L24,12L14.5,14.5L12,24L9.5,14.5L0,12L9.5,9.5L12,0Z' style='filter:drop-shadow(0 0 4px rgba(255,255,255,0.8));'/%3E%3C/svg%3E") 12 12, auto;
     color: var(--text-primary);
     background-color: var(--bg-body);
-    background-image: radial-gradient(circle at 50% 0%, rgba(30, 60, 100, 0.3), transparent 60%), url('/images/macos-bg.png');
+    background-image: radial-gradient(circle at 50% 0%, rgba(30, 60, 100, 0.3), transparent 60%), url('../images/macos-bg.png');
     background-attachment: fixed;
     background-size: cover;
     overflow-x: hidden;
-    /* Prevent horizontal scroll from absolute stars */
+    /* 防止绝对定位星星导致横向滚动 */
 }
 
-/* Ambient Space Glow (Intensified) */
+/* 环境太空光晕（增强版） */
 .planet-glow {
     position: absolute;
     top: -200px;
@@ -784,7 +787,7 @@ body {
     }
 }
 
-/* Static Stars */
+/* 静态星星 */
 .star {
     position: absolute;
     background: white;
@@ -793,7 +796,7 @@ body {
     animation: twinkle var(--duration, 3s) infinite ease-in-out;
     opacity: var(--opacity, 0.8);
     box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
-    /* Glow for larger stars */
+    /* 较大星星的光晕 */
 }
 
 .constellation-svg {
@@ -804,7 +807,7 @@ body {
     height: 100%;
     pointer-events: none;
     z-index: -2;
-    /* Behind stars */
+    /* 星星后方 */
 }
 
 .constellation-line {
@@ -827,7 +830,7 @@ body {
     }
 }
 
-/* Force specific elements to use the new variables if they were hardcoded */
+/* 强制特定元素使用新变量（如果之前是硬编码的） */
 h1,
 h2,
 h3,
@@ -844,10 +847,10 @@ textarea,
 select,
 label {
     color: inherit;
-    /* Allow cascading from body/parent */
+    /* 允许从 body/父元素级联 */
 }
 
-/* Start of component specific overrides */
+/* 组件特定覆盖开始 */
 h1 {
     color: #ffffff !important;
     text-shadow: 0 0 30px rgba(255, 255, 255, 0.6), 0 0 10px rgba(0, 191, 255, 0.8);
@@ -859,7 +862,7 @@ h1 {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
 }
 
-/* Meteor */
+/* 流星 */
 .meteor-particle {
     position: absolute;
     width: 6px;
@@ -885,7 +888,7 @@ h1 {
     }
 }
 
-/* Modal & Glass - More Transparent to show stars */
+/* 模态框和玻璃效果 - 更透明以显示星星 */
 .glass-bar,
 .api-list,
 .modal,
@@ -893,7 +896,7 @@ h1 {
 #sidebar {
     background: var(--glass-bg) !important;
     backdrop-filter: blur(20px) !important;
-    /* Strong blur */
+    /* 强模糊 */
     -webkit-backdrop-filter: blur(20px) !important;
     border: 1px solid rgba(255, 255, 255, 0.25) !important;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
@@ -918,7 +921,7 @@ textarea {
     color: #aaaaaa !important;
 }
 
-/* Test Button Fix */
+/* 测试按钮修复 */
 .btn-test {
     color: #ffffff !important;
     background: rgba(255, 255, 255, 0.1) !important;
@@ -931,7 +934,7 @@ textarea {
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-/* Text Visibility Helpers */
+/* 文本可见性辅助 */
 .form-label,
 .c-tab,
 .api-path,
@@ -944,7 +947,7 @@ textarea {
     color: #dddddd !important;
 }
 
-/* Segment Control Text */
+/* 分段控制文本 */
 .segment {
     color: #dddddd !important;
 }
@@ -954,7 +957,7 @@ textarea {
     background: #ffffff !important;
 }
 
-/* Add Button - Force visibility */
+/* 添加按钮 - 强制可见 */
 .btn-add {
     background: #ffffff !important;
     color: #000000 !important;
@@ -967,7 +970,7 @@ textarea {
     transform: translateY(-1px);
 }
 
-/* Glass Button (Header) - Force Black Text on White BG */
+/* 玻璃按钮（头部） - 强制白色背景上黑色文本 */
 .glass-btn {
     background: #ffffff !important;
     color: #000000 !important;
@@ -979,7 +982,7 @@ textarea {
     transform: scale(1.05);
 }
 
-/* Code Box */
+/* 代码框 */
 .response-box,
 #c-res-body {
     background: rgba(0, 0, 0, 0.8) !important;
@@ -991,7 +994,7 @@ textarea {
     position: relative;
 }
 
-/* Custom Scrollbar (Webkit) */
+/* 自定义滚动条（Webkit） */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -1011,7 +1014,7 @@ textarea {
     background: rgba(255, 255, 255, 0.4);
 }
 
-/* Copy Button */
+/* 复制按钮 */
 .btn-copy {
     position: absolute;
     top: 8px;
@@ -1105,7 +1108,7 @@ textarea {
     color: #7ee787;
 }
 
-/* Sidebar Item */
+/* 侧边栏项 */
 .sidebar-item {
     font-size: 13px;
     color: var(--text-secondary);
@@ -1131,7 +1134,7 @@ textarea {
     font-weight: 600;
 }
 
-/* Input & Textarea Overrides - Original Simple White */
+/* 输入框和文本域覆盖 - 原始简洁白色 */
 .form-input,
 .glass-input,
 textarea,
@@ -1160,7 +1163,7 @@ textarea::placeholder {
     text-shadow: none !important;
 }
 
-/* Test Button Fix */
+/* 测试按钮修复 */
 .btn-test {
     color: #ffffff !important;
     background: rgba(255, 255, 255, 0.1) !important;
@@ -1173,7 +1176,7 @@ textarea::placeholder {
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-/* Text Visibility Helpers */
+/* 文本可见性辅助 */
 .form-label,
 .c-tab,
 .api-path,
@@ -1186,18 +1189,18 @@ textarea::placeholder {
     color: #dddddd !important;
 }
 
-/* Segment Control Text */
+/* 分段控制文本 */
 .segment {
     color: #dddddd !important;
 }
 
 .segment.active {
     color: #000000 !important;
-    /* Active segment needs dark text if background is white */
+    /* 激活的分段在白色背景上需要深色文本 */
     background: #ffffff !important;
 }
 
-/* Add Button - Force visibility */
+/* 添加按钮 - 强制可见 */
 .btn-add {
     background: #ffffff !important;
     color: #000000 !important;
@@ -1210,7 +1213,7 @@ textarea::placeholder {
     transform: translateY(-1px);
 }
 
-/* Glass Button (Header) - Force Black Text on White BG */
+/* 玻璃按钮（头部） - 强制白色背景上黑色文本 */
 .glass-btn {
     background: #ffffff !important;
     color: #000000 !important;
@@ -1222,7 +1225,7 @@ textarea::placeholder {
     transform: scale(1.05);
 }
 
-/* Code Box */
+/* 代码框 */
 .response-box,
 #c-res-body {
     background: rgba(0, 0, 0, 0.8) !important;
@@ -1232,10 +1235,14 @@ textarea::placeholder {
     padding: 15px;
     border-radius: 8px;
     position: relative;
-    /* For copy button context if needed */
+    /* 防止长内容撑破屏幕 */
+    /* 防止长内容撑破屏幕 */
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+    word-break: break-word;
 }
 
-/* Custom Scrollbar (Webkit) */
+/* 自定义滚动条（Webkit） */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -1255,17 +1262,17 @@ textarea::placeholder {
     background: rgba(255, 255, 255, 0.4);
 }
 
-/* Copy Button */
+/* 复制按钮 */
 .btn-copy {
     position: absolute;
     top: 8px;
     right: 8px;
     background: rgba(255, 255, 255, 0.08);
-    /* Match btn-utility */
+    /* 匹配 btn-utility */
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-secondary);
     padding: 6px;
-    /* Icon only typically */
+    /* 通常仅图标 */
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
@@ -1351,7 +1358,7 @@ textarea::placeholder {
     color: #7ee787;
 }
 
-/* Sidebar Item */
+/* 侧边栏项 */
 .sidebar-item {
     font-size: 13px;
     color: var(--text-secondary);
@@ -1403,27 +1410,27 @@ textarea::placeholder {
 }
 
 /* =================================================================
-   Sidebar Content Shift Logic
+   侧边栏内容偏移逻辑
    ================================================================= */
-/* Global Box Sizing Reset */
+/* 全局盒模型重置 */
 * {
     box-sizing: border-box;
 }
 
 /* =================================================================
-   Sidebar Content Shift Logic (Fluid Layout)
+   侧边栏内容偏移逻辑（流式布局）
    ================================================================= */
 .container {
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     position: relative;
-    /* Ensure z-index works if needed */
+    /* 确保 z-index 在需要时生效 */
 }
 
 /* 
-   When sidebar is open:
-   1. Abandon "Centered" layout (margin: 0 auto)
-   2. Become "Fluid" layout (max-width: none)
-   3. Sit next to sidebar (margin-left: 260px + 20px gap = 280px)
+   当侧边栏打开时：
+   1. 放弃"居中"布局（margin: 0 auto）
+   2. 变为"流式"布局（max-width: none）
+   3. 紧邻侧边栏（margin-left: 260px + 20px 间隙 = 280px）
 */
 .container.padded-force {
     max-width: none !important;
@@ -1433,8 +1440,104 @@ textarea::placeholder {
     width: auto !important;
 }
 
-/* Remove old selector if present */
+/* 如果存在旧的选择器则移除 */
 #main-content {
     display: flex;
     gap: 30px;
+}
+
+/* =================================================================
+   移动端适配 (最大宽度: 768px)
+   ================================================================= */
+@media (max-width: 768px) {
+
+    /* 默认隐藏侧边栏 */
+    #sidebar {
+        left: -300px !important;
+        display: block !important;
+        /* 由 left 属性控制 */
+        transition: left 0.3s ease;
+        background: rgba(16, 18, 27, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        width: 80% !important;
+        height: 100vh !important;
+        top: 0 !important;
+        z-index: 10000;
+        padding-top: 80px !important;
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    #sidebar.active {
+        left: 0 !important;
+    }
+
+    /* 调整主容器 */
+    .container {
+        padding: 10px !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    .container.padded-force {
+        margin-left: 0 !important;
+        /* 移动端禁用偏移 */
+    }
+
+    /* 固定头部调整 */
+    header {
+        flex-direction: row !important;
+        /* 保持行布局 */
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        padding: 10px !important;
+        height: auto !important;
+    }
+
+    /* 移动端隐藏 Logo 文字以节省空间 */
+    header h1 {
+        display: none;
+    }
+
+    .planet-glow {
+        display: none;
+        /* 隐藏重型特效 */
+    }
+
+    .glass-bar {
+        width: 100%;
+        overflow-x: auto;
+        padding: 5px;
+        white-space: nowrap;
+        order: 3;
+        /* 移至底行 */
+        margin-top: 5px;
+    }
+
+    /* 侧边栏切换按钮 */
+    #sidebar-toggle {
+        position: static !important;
+        /* 移入文档流 */
+        margin-right: 10px;
+        background: transparent !important;
+        width: auto !important;
+        height: auto !important;
+        font-size: 24px;
+    }
+
+    /* 调整卡片 */
+    .api-item {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .api-info {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .api-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
 }
