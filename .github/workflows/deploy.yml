@@ -26,8 +26,7 @@ jobs:
            echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
 
       - name: Build and Deploy
-        run: mvn clean deploy -Prelease -DskipTests
+        run: mvn clean deploy -Prelease -DskipTests -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} -Dgpg.arguments="--pinentry-mode=loopback"
         env:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
