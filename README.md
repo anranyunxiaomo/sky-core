@@ -46,7 +46,9 @@ Sky Core 打造了沉浸式的 API 调试环境，每一个像素都经过精心
 - **智能调试台**: 
   - **动态参数生成**: 根据 Java 对象结构自动生成 JSON 请求体模板。
   - **实时响应预览**: 支持 JSON 高亮、折叠，状态码一目了然。
+  - **🧬 生产力工具**: 内置 **TS 生成**与 **Mock 引擎**，在接口测试弹窗中随时调用。
   - **⚙️ 全局配置**: 支持设置全局请求头 (Headers)，自动应用于所有请求。
+  - **✅ 交互提示**: 引入全局 Toast 组件，剪贴板复制等操作均有直观反馈。
   - **⌨️ 快捷键支持**: 
     - `Ctrl/Cmd + K`: 快速聚焦搜索框
     - `Ctrl/Cmd + Enter`: 提交请求
@@ -73,13 +75,13 @@ Sky Core 打造了沉浸式的 API 调试环境，每一个像素都经过精心
 <dependency>
     <groupId>io.github.anranyunxiaomo</groupId>
     <artifactId>sky-core</artifactId>
-    <version>0.0.2</version>
+    <version>1.0.0</version>
 </dependency>
 ```
 
 #### Gradle
 ```groovy
-implementation 'io.github.anranyunxiaomo:sky-core:0.0.2'
+implementation 'io.github.anranyunxiaomo:sky-core:1.0.0'
 ```
 
 ### 2. 开启功能
