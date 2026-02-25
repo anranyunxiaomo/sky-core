@@ -1,0 +1,14 @@
+server:
+  port: 8080
+  # address: 127.0.0.1
+  # Enable Forwarded Headers Strategy for Nginx/Proxy
+  forward-headers-strategy: framework
+
+spring:
+  thymeleaf:
+    # Disable caching for debugging
+    cache: false
+  web:
+    resources:
+      cache:
+        period: 0
